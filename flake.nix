@@ -13,10 +13,11 @@
             devShells.x86_64-linux.default = pkgs.mkShell {
                 buildInputs = [
                     pkgs.arduino-cli
+                    pkgs.arduino-ide
                 ];
 
                 # Generate platformio.ini and install libraries
-                shellHook = ''echo Hello
+                shellHook = ''echo develop
             '';
             };
         };
