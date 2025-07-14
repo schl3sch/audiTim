@@ -16,9 +16,10 @@
                     pkgs.arduino-ide
                 ];
 
-                # Generate platformio.ini and install libraries
-                shellHook = ''echo develop
-            '';
+                shellHook = ''
+                    echo develop
+                    arduino-ide ~/Documents/GitHub/audiTim > /dev/null 2>&1 &
+                '';
             };
         };
 }
