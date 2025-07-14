@@ -1,0 +1,20 @@
+# Ignore build folder created by arduino-cli
+build/
+
+# Ignore compiled binaries
+*.bin
+*.elf
+*.hex
+
+# Ignore backup files and temporary files
+*.tmp
+*.swp
+*~
+
+# Ignore Arduino IDE settings
+*.suo
+*.dep
+*.d
+
+# Ignore any local secrets file
+arduino_secrets.h
