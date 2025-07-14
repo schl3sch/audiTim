@@ -1,6 +1,8 @@
 // Installation instructions for the ESP32-Board
 // https://randomnerdtutorials.com/installing-the-esp32-board-in-arduino-ide-windows-instructions/
 
+// Select ESP32 Dev Module as your board
+
 // Libraries:
 // ArduinoMqttClient@0.1.8
 
