@@ -29,20 +29,25 @@ unsigned long previousMillis = 0;
 
 int count = 0;
 
-// Pin to test LED
-const int LED_PIN = 2;// For the dev boards
-
 void setup() {
-  // Initialize the LED pin as an output:
-  pinMode(LED_PIN, OUTPUT);
+  Serial.begin(115200);
+  while (!Serial) {
+    ; // wait for serial port to connect. Needed for native USB port only
+  }
+
+  Serial.print("Attempting to connect to WPA SSID: ");
+  Serial.println(ssid);
+  while (WiFi.begin(ssid, pass) != WL_CONNECTED) {
+    // failed, retry
+    Serial.print(".");
+    delay(5000);
+  }
+
+  Serial.println("You're connected to the network");
+  Serial.println();
 }
 
-void loop() {
-  // Turn the LED on:
-  digitalWrite(LED_PIN, HIGH);
-  delay(1000);
 
-  // Turn the LED off:
-  digitalWrite(LED_PIN, LOW);
-  delay(1000);
+void loop() {
+
 }
