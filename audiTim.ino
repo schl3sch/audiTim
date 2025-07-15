@@ -22,19 +22,26 @@ const char topic[]  = "arduino/simple";
 
 const char MQTT_USER[] = "haenisch";
 const char MQTT_PASS[] = "geheim";
-const char broker[] = "10.43.100.127";
+const char broker[] = "aicon.dhbw-heidenheim.de"; // changed?? TODO
 
 const long interval = 1000;
 unsigned long previousMillis = 0;
 
 int count = 0;
 
+//MAX4466
+const unsigned long sampleWindow = 50;  // Sample window width in mS (50 mS = 20Hz)
+int const AMP_PIN = 13;       // Preamp output pin connected to GPIO13
+unsigned int maxAnalogRead = 4095; // For the ESP32 0-4095
+unsigned int sample;
+
+
 void setup() {
   Serial.begin(115200);
   while (!Serial) {
     ; // wait for serial port to connect. Needed for native USB port only
   }
-
+  /*
   Serial.print("Attempting to connect to WPA SSID: ");
   Serial.println(ssid);
   while (WiFi.begin(ssid, pass) != WL_CONNECTED) {
@@ -44,10 +51,35 @@ void setup() {
   }
 
   Serial.println("You're connected to the network");
-  Serial.println();
+  Serial.println();*/
 }
 
 
 void loop() {
+  unsigned long startMillis = millis(); // Start of sample window
+  unsigned int peakToPeak = 0;   // peak-to-peak level
 
+  unsigned int signalMax = 0;
+  unsigned int signalMin = maxAnalogRead;
+
+  // collect data for 50 mS and then plot data
+  while (millis() - startMillis < sampleWindow)
+  {
+    sample = analogRead(AMP_PIN);
+    if (sample < maxAnalogRead)  // toss out spurious readings
+    {
+      if (sample > signalMax)
+      {
+        signalMax = sample;  // save just the max levels
+      }
+      else if (sample < signalMin)
+      {
+        signalMin = sample;  // save just the min levels
+      }
+    }
+  }
+  peakToPeak = signalMax - signalMin;  // max - min = peak-peak amplitude
+  Serial.println(peakToPeak);
+  //double volts = (peakToPeak * 5.0) / maxAnalogRead;  // convert to volts
+  //Serial.println(volts);
 }
