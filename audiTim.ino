@@ -35,6 +35,9 @@ int const AMP_PIN = 13;       // Preamp output pin connected to GPIO13
 unsigned int maxAnalogRead = 4095; // For the ESP32 0-4095
 unsigned int sample;
 
+// Setup for DFRobot Sound Level Meter V2.0
+#define SoundSensorPin 12  // Analog input pin
+#define VREF 3.3           // ESP32 ADC reference voltage
 
 void setup() {
   Serial.begin(115200);
@@ -78,8 +81,23 @@ void loop() {
       }
     }
   }
+
+  int rawADC = analogRead(SoundSensorPin);
+  float voltageRaw = rawADC * (VREF / 4095.0); // 12-bit ADC: max 4095; Mapping 0.6V to 2.6V
+  // float dB_estimate = voltage * 50.0; // Kalibrierte Multiplikation für lineare Zuordnung
+  float voltageCalc = voltageRaw - 0.6;
+
   peakToPeak = signalMax - signalMin;  // max - min = peak-peak amplitude
   Serial.println(peakToPeak);
-  //double volts = (peakToPeak * 5.0) / maxAnalogRead;  // convert to volts
-  //Serial.println(volts);
+  Serial.print("Reference-5V:");
+  Serial.print("5");
+  Serial.print(",Reference-2.6V:");
+  Serial.print("2.6");
+  
+  Serial.print(",MAX4466:");
+  double volts = (peakToPeak * 5.0) / maxAnalogRead;  // convert to volts
+  Serial.print(volts);
+
+  Serial.print(",Gravity:");
+  Serial.println(voltageCalc);
 }
