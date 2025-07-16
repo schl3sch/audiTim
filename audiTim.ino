@@ -8,6 +8,7 @@
 
 #include <WiFi.h> // Is installed automatically. Don't install additional libs
 #include <ArduinoMqttClient.h> // Has to be installed manually
+#include <esp_now.h>
 #include "arduino_secrets.h" // Local file with secrets
 
 char ssid[] = SECRET_SSID;    // your network SSID (name)
@@ -31,13 +32,16 @@ int count = 0;
 
 //MAX4466
 const unsigned long sampleWindow = 50;  // Sample window width in mS (50 mS = 20Hz)
-int const AMP_PIN = 13;       // Preamp output pin connected to GPIO13
+int const AMP_PIN = 32;       // Preamp output pin connected to GPIO13
 unsigned int maxAnalogRead = 4095; // For the ESP32 0-4095
 unsigned int sample;
 
 // Setup for DFRobot Sound Level Meter V2.0
-#define SoundSensorPin 12  // Analog input pin
+#define SoundSensorPin 33  // Analog input pin
 #define VREF 3.3           // ESP32 ADC reference voltage
+
+// ESP-NOW
+uint8_t empfaengerMac[] = {0xD4, 0x8C, 0x49, 0x69, 0xD5, 0x74};
 
 void setup() {
   Serial.begin(115200);
@@ -55,6 +59,19 @@ void setup() {
 
   Serial.println("You're connected to the network");
   Serial.println();*/
+  WiFi.mode(WIFI_STA);
+  esp_now_init();
+  esp_now_peer_info_t peerInfo = {};
+  memcpy(peerInfo.peer_addr, empfaengerMac, 6);
+  peerInfo.channel = 0;
+  peerInfo.encrypt = false;
+
+  if (esp_now_add_peer(&peerInfo) != ESP_OK) {
+    Serial.println("Peer hinzufügen fehlgeschlagen");
+    return;
+  }
+
+  esp_now_register_send_cb(onSent);
 }
 
 
@@ -100,4 +117,28 @@ void loop() {
 
   Serial.print(",Gravity:");
   Serial.println(voltageCalc);
+
+  char buffer[4];
+  sprintf(buffer, "%d", peakToPeak);
+
+  const char *nachricht = &buffer[0];
+  esp_err_t result = esp_now_send(empfaengerMac, (uint8_t *)nachricht, strlen(nachricht));
+
+  if (result == ESP_OK) {
+    Serial.println("📤 Sendeversuch ausgelöst");
+  } else {
+    Serial.println("❌ Senden fehlgeschlagen");
+  }
+
+  delay(20);
+}
+
+void onSent(const uint8_t *mac_addr, esp_now_send_status_t status) {
+  Serial.print("Senden an ");
+  for (int i = 0; i < 6; i++) {
+    Serial.printf("%02X", mac_addr[i]);
+    if (i < 5) Serial.print(":");
+  }
+  Serial.print(" -> ");
+  Serial.println(status == ESP_NOW_SEND_SUCCESS ? "✅ OK" : "❌ FEHLER");
 }
