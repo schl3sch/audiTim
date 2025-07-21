@@ -6,6 +6,12 @@
 // Libraries:
 // ArduinoMqttClient@0.1.8
 
+// Mac-Adresses:
+// ESP-1 (Edge):  94:54:C5:E8:A5:DC
+// ESP-2:         94:54:C5:E8:BC:40
+// ESP-3:         D4:8C:49:69:D5:74
+// ESP-4:         D4:8C:49:6A:EC:24
+
 #include <WiFi.h> // Is installed automatically. Don't install additional libs
 #include <ArduinoMqttClient.h> // Has to be installed manually
 #include <esp_now.h>
@@ -39,7 +45,7 @@ uint16_t sample;
 #define VREF 3.3           // ESP32 ADC reference voltage
 
 // ESP-NOW
-uint8_t empfaengerMac[] = {0xD4, 0x8C, 0x49, 0x69, 0xD5, 0x74};
+uint8_t empfaengerMac[] = {0xDE, 0x8C, 0x49, 0x69, 0xD5, 0x74};
 typedef struct struct_message {
   uint16_t audio; // 0-4095 Mic volume
   uint16_t error; // Error = Number of failed messages
@@ -68,17 +74,9 @@ void setup() {
   // ESP-NOW
   WiFi.mode(WIFI_STA);
   esp_now_init();
-  esp_now_peer_info_t peerInfo = {};
-  memcpy(peerInfo.peer_addr, empfaengerMac, 6);
-  peerInfo.channel = 0;
-  peerInfo.encrypt = false;
+  
 
-  if (esp_now_add_peer(&peerInfo) != ESP_OK) {
-    Serial.println("Peer hinzufügen fehlgeschlagen");
-    return; // Leave Setup()
-  }
-
-  esp_now_register_send_cb(onSent);
+  esp_now_register_recv_cb(onReceive);
 }
 
 
@@ -117,14 +115,12 @@ void loop() {
   }
 }
 
-void onSent(const uint8_t *mac_addr, esp_now_send_status_t status) {
-  Serial.print("Send status: ");
-  if(status == ESP_NOW_SEND_SUCCESS){
-    Serial.println("✅");
-  }else{
-    failedTransmissionCounter++;
-    Serial.println("❌");
+void onReceive(const esp_now_recv_info* info, const uint8_t* data, int len) {
+  Serial.print("Data:");
+  for (int i = 0; i < len; i++) {
+    Serial.print((char)data[i]);
   }
+  Serial.println(",Reference:4095");
 }
 
 uint16_t probeMax4466(){
