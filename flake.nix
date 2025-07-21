@@ -17,7 +17,7 @@
                 ];
 
                 shellHook = ''
-                    echo develop
+                    arduino-cli lib list
                     arduino-ide ~/Documents/GitHub/audiTim > /dev/null 2>&1 &
                 '';
             };
