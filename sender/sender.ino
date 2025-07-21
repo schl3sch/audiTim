@@ -1,3 +1,8 @@
+// Installation instructions for the ESP32-Board
+// https://randomnerdtutorials.com/installing-the-esp32-board-in-arduino-ide-windows-instructions/
+
+// Select ESP32 Dev Module as your board
+
 #include <esp_now.h>
 #include <WiFi.h>
 #include <esp_wifi.h>
@@ -22,6 +27,12 @@ int targetChannel = 1;
 const int LED_PIN = 2;
 bool ledStatus = false; // false - LOW; true - HIGH
 
+//MAX4466
+const unsigned long sampleWindow = 50;  // Sample window width in mS (50 mS = 20Hz)
+int const AMP_PIN = 32;       // Analog Pin on the ESP32
+uint16_t maxAnalogRead = 4095; // For the ESP32 0-4095
+uint16_t sample;
+
 // ESP-Now
 typedef struct struct_message {
   uint16_t audio; // 0-4095 Mic volume
@@ -31,7 +42,6 @@ uint16_t failedTransmissionCounter = 0;
 struct_message myData; // Create a struct_message called myData
 
 void setup() {
-  Serial.begin(115200);
   WiFi.mode(WIFI_STA);
   while (!(WiFi.STA.started())) {
     delay(100);
@@ -71,22 +81,18 @@ void setup() {
 }
 
 void loop() {
-  Serial.print(myMac[5]);
-  delay(1000);
-}
+  unsigned long startProbeMillis = millis(); // Each measure and sending cycle will take exactly 100ms
+  uint16_t peakToPeak = probeMax4466();
 
-void onSent(const uint8_t *mac_addr, esp_now_send_status_t status) {
-  Serial.print("Send status: ");
-  if(status == ESP_NOW_SEND_SUCCESS && ledStatus == false){
-    digitalWrite(LED_PIN, HIGH);
-    ledStatus = true;
-  }
-  else if(status != ESP_NOW_SEND_SUCCESS){
-    failedTransmissionCounter++; // Hopefully this doesn't overflow to quickly
-    if(ledStatus){
-      digitalWrite(LED_PIN, LOW);
-      ledStatus = false;
-    }
+  // Prepare ESP-NOW message
+  myData.audio = peakToPeak;
+  myData.error = failedTransmissionCounter;
+
+  esp_now_send(edgeDeviceMac, (uint8_t *) &myData, sizeof(myData));
+
+  // Non-blocking wait
+  while((startProbeMillis + 100) < millis()){
+    ; // Just chill here for the duration of 100ms
   }
 }
 
@@ -107,4 +113,41 @@ void selectMac(){
   }
 }
 
+void onSent(const uint8_t *mac_addr, esp_now_send_status_t status) {
+  if(status == ESP_NOW_SEND_SUCCESS && ledStatus == false){
+    digitalWrite(LED_PIN, HIGH);
+    ledStatus = true;
+  }
+  else if(status != ESP_NOW_SEND_SUCCESS){
+    failedTransmissionCounter++; // Hopefully this doesn't overflow to quickly
+    if(ledStatus){
+      digitalWrite(LED_PIN, LOW);
+      ledStatus = false;
+    }
+  }
+}
+
+uint16_t probeMax4466(){
+  unsigned long startMillis = millis(); // Start of sample window
+  uint16_t signalMax = 0;
+  uint16_t signalMin = maxAnalogRead;
+
+  // collect data for 50 mS
+  while (millis() - startMillis < sampleWindow)
+  {
+    sample = analogRead(AMP_PIN);
+    if (sample < maxAnalogRead)  // toss out spurious readings
+    {
+      if (sample > signalMax)
+      {
+        signalMax = sample;  // save just the max levels
+      }
+      else if (sample < signalMin)
+      {
+        signalMin = sample;  // save just the min levels
+      }
+    }
+  }
+  return(signalMax - signalMin);  // max - min = peak-peak amplitude
+}
 

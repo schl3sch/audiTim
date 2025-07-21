@@ -33,9 +33,11 @@ Bitte achtet auf folgende grundlegende Regeln im Projekt:
 ### Code-Richtlinien
 
 - **C++ (ESP32):**
-  - Kein delay() nach WiFi init
-  - Auf den Sendern kein Serial.print()
-  - Kein \#define -> nur const
+  - Kein delay() nach WiFi init (Stört WiFi)
+  - Kein Serial.print in finalem Sketch (Braucht zu lange)
+  - Kein \#define -> nur const (Einheitlich)
+  - Kein while(!init){} (Nicht benötigt)
+  - Funktion probeMax4466 muss in den Dateien identisch sein
 
 ## 🔀 Git-Workflow (Feature-Branch-Modell)
 

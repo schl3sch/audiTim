@@ -6,16 +6,20 @@
 // Libraries:
 // ArduinoMqttClient@0.1.8
 
+#include <WiFi.h> // Is installed automatically. Don't install additional libs
+#include <ArduinoMqttClient.h> // Has to be installed manually
+#include <esp_now.h>
+#include "arduino_secrets.h" // Local file with secrets
+
+// This sketch is executed on the Edge-Device.
+// It connects to WiFi and gives all sensor data from the other ESPs to the MQTT server.
+// Sensor data is being captured locally but also received from the other ESPs over ESP-Now.
+
 // Mac-Adresses:
 // ESP-1 (Edge):  94:54:C5:E8:A5:DC
 // ESP-2:         94:54:C5:E8:BC:40
 // ESP-3:         D4:8C:49:69:D5:74
 // ESP-4:         D4:8C:49:6A:EC:24
-
-#include <WiFi.h> // Is installed automatically. Don't install additional libs
-#include <ArduinoMqttClient.h> // Has to be installed manually
-#include <esp_now.h>
-#include "arduino_secrets.h" // Local file with secrets
 
 char ssid[] = SECRET_SSID;    // your network SSID (name)
 char pass[] = SECRET_PASS;    // your network password (use for WPA, or use as key for WEP)
@@ -27,12 +31,13 @@ int        port     = 1883;
 const char topic[]  = "arduino/simple";
 const char MQTT_USER[] = "haenisch";
 const char MQTT_PASS[] = "geheim";
-const char broker[] = "aicon.dhbw-heidenheim.de"; // changed?? TODO
-
+const char broker[] = "aicon.dhbw-heidenheim.de"; // changed??
 const long interval = 1000;
 unsigned long previousMillis = 0;
-
 int count = 0;
+
+// Variables for controlling LED
+const int LED_PIN = 2;
 
 //MAX4466
 const unsigned long sampleWindow = 50;  // Sample window width in mS (50 mS = 20Hz)
@@ -40,25 +45,18 @@ int const AMP_PIN = 32;       // Analog Pin on the ESP32
 uint16_t maxAnalogRead = 4095; // For the ESP32 0-4095
 uint16_t sample;
 
-// Setup for DFRobot Sound Level Meter V2.0
-#define SoundSensorPin 33  // Analog Pin on the ESP32
-#define VREF 3.3           // ESP32 ADC reference voltage
-
-// ESP-NOW
+// ESP-Now
 uint8_t empfaengerMac[] = {0xDE, 0x8C, 0x49, 0x69, 0xD5, 0x74};
 typedef struct struct_message {
   uint16_t audio; // 0-4095 Mic volume
   uint16_t error; // Error = Number of failed messages
 } struct_message; // Typedef
 uint16_t failedTransmissionCounter = 0;
-struct_message myData; // Create a struct_message called myData
+
 
 void setup() {
   // Serial Setup
   Serial.begin(115200);
-  while (!Serial) {
-    ; // wait for serial port to connect. Needed for native USB port only
-  }
 
   // Connect to WiFi
   /*Serial.print("Attempting to connect to WPA SSID: ");
@@ -73,54 +71,49 @@ void setup() {
 
   // ESP-NOW
   WiFi.mode(WIFI_STA);
-  esp_now_init();
-  
+  while (!(WiFi.STA.started())) {
+    delay(100);
+  }
 
+  // Make LED blinkable
+  pinMode(LED_PIN, OUTPUT);
+
+  // ESP-Now
+  esp_now_init();
   esp_now_register_recv_cb(onReceive);
 }
 
-
 void loop() {
-  unsigned long startProbeMillis = millis(); // Each measure and sending cycle will take exactly 100ms
-
+  /*unsigned long startProbeMillis = millis(); // Each measure and sending cycle will take exactly 100ms
   uint16_t peakToPeak = probeMax4466();
 
-  // Gravity Mic
-  int rawADC = analogRead(SoundSensorPin);
-  float voltageRaw = rawADC * (VREF / 4095.0); // 12-bit ADC: max 4095; Mapping 0.6V to 2.6V
-  // float dB_estimate = voltage * 50.0; // Kalibrierte Multiplikation für lineare Zuordnung
-  float voltageCalc = voltageRaw - 0.6;
-
-  Serial.println(peakToPeak);
-  Serial.print("Reference-5V:");
-  Serial.print("5");
-  Serial.print(",Reference-2.6V:");
-  Serial.print("2.6");
+  //Serial.println(peakToPeak);
+  Serial.print("Reference:");
+  Serial.print("4095");
   
-  Serial.print(",MAX4466:");
-  double volts = (peakToPeak * 5.0) / maxAnalogRead;  // convert to volts
-  Serial.print(volts);
+  Serial.print(",Local:");
+  Serial.print(peakToPeak);
 
-  Serial.print(",Gravity:");
-  Serial.println(voltageCalc);
-
-  // Prepare ESP-NOW message
-  myData.audio = peakToPeak;
-  myData.error = failedTransmissionCounter;
-
-  esp_now_send(empfaengerMac, (uint8_t *) &myData, sizeof(myData));
-
+  // Non-blocking wait
   while((startProbeMillis + 100) < millis()){
     ; // Just chill here for the duration of 100ms
-  }
+  }*/
 }
 
 void onReceive(const esp_now_recv_info* info, const uint8_t* data, int len) {
-  Serial.print("Data:");
-  for (int i = 0; i < len; i++) {
-    Serial.print((char)data[i]);
+  uint8_t identifier = info->src_addr[5];
+
+  if (len != sizeof(struct_message)) {
+    Serial.printf("Received unexpected data size: %d bytes\n", len);
+    return;
   }
-  Serial.println(",Reference:4095");
+
+  struct_message incomingData;
+  memcpy(&incomingData, data, sizeof(incomingData));
+
+  Serial.print("Ref:4095,");
+  Serial.printf("%u-Data:%u,", identifier, incomingData.audio); // %u for unsigned integer
+  Serial.printf("%u-Error:%u\n", identifier, incomingData.error);
 }
 
 uint16_t probeMax4466(){
