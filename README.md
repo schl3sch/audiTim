@@ -19,16 +19,23 @@ Bitte achtet auf folgende grundlegende Regeln im Projekt:
 
 ### Code-Stil
 
-- **C/C++ (ESP32):**
-  - Einrückung mit 2 oder 4 Leerzeichen (einheitlich)
+- **C++ (ESP32):**
+  - Einrückung mit 2 Leerzeichen
   - CamelCase für Variablen und Funktionen
-  - Funktionskommentare mit `///` oder `/** */`  
+  - Funktionskommentare mit im Stil `CODE // Kommentar ` 
 - **Python:**
   - PEP8-konform
   - Docstrings für alle Funktionen und Klassen
 - **JavaScript/TypeScript:**
   - ESLint-konformer Stil
   - Klar benannte Funktionen & Kommentare bei komplexer Logik
+
+### Code-Richtlinien
+
+- **C++ (ESP32):**
+  - Kein delay() nach WiFi init
+  - Auf den Sendern kein Serial.print()
+  - Kein \#define -> nur const
 
 ## 🔀 Git-Workflow (Feature-Branch-Modell)
 
