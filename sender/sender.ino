@@ -42,6 +42,7 @@ uint16_t failedTransmissionCounter = 0;
 struct_message myData; // Create a struct_message called myData
 
 void setup() {
+  Serial.begin(115200);
   WiFi.mode(WIFI_STA);
   while (!(WiFi.STA.started())) {
     delay(100);
@@ -83,6 +84,8 @@ void setup() {
 void loop() {
   unsigned long startProbeMillis = millis(); // Each measure and sending cycle will take exactly 100ms
   uint16_t peakToPeak = probeMax4466();
+  Serial.print("Zero:0,Max:4095,Mic:");
+  Serial.println(peakToPeak);
 
   // Prepare ESP-NOW message
   myData.audio = peakToPeak;
@@ -91,7 +94,7 @@ void loop() {
   esp_now_send(edgeDeviceMac, (uint8_t *) &myData, sizeof(myData));
 
   // Non-blocking wait
-  while((startProbeMillis + 100) < millis()){
+  while((startProbeMillis + 100) > millis()){
     ; // Just chill here for the duration of 100ms
   }
 }

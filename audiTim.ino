@@ -84,7 +84,7 @@ void setup() {
 }
 
 void loop() {
-  /*unsigned long startProbeMillis = millis(); // Each measure and sending cycle will take exactly 100ms
+  unsigned long startProbeMillis = millis(); // Each measure and sending cycle will take exactly 100ms
   uint16_t peakToPeak = probeMax4466();
 
   //Serial.println(peakToPeak);
@@ -92,12 +92,12 @@ void loop() {
   Serial.print("4095");
   
   Serial.print(",Local:");
-  Serial.print(peakToPeak);
+  Serial.println(peakToPeak);
 
   // Non-blocking wait
-  while((startProbeMillis + 100) < millis()){
+  while((startProbeMillis + 100) > millis()){
     ; // Just chill here for the duration of 100ms
-  }*/
+  }
 }
 
 void onReceive(const esp_now_recv_info* info, const uint8_t* data, int len) {
