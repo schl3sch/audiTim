@@ -23,10 +23,6 @@ uint8_t myMac[] = {0xDE, 0xAD, 0xC0, 0xDE, 0x00, 0x00}; // Will get changed base
 // Standard channel should be 1 but could change
 int targetChannel = 1;
 
-// Variables for controlling LED
-const int LED_PIN = 2;
-bool ledStatus = false; // false - LOW; true - HIGH
-
 //MAX4466
 const unsigned long sampleWindow = 50;  // Sample window width in mS (50 mS = 20Hz)
 int const AMP_PIN = 32;       // Analog Pin on the ESP32
@@ -36,20 +32,17 @@ uint16_t sample;
 // ESP-Now
 typedef struct struct_message {
   uint16_t audio; // 0-4095 Mic volume
-  uint16_t error; // Error = Number of failed messages
+  uint16_t error; // Error = Number of failed messages since last success
 } struct_message; // Typedef
 uint16_t failedTransmissionCounter = 0;
 struct_message myData; // Create a struct_message called myData
 
 void setup() {
-  Serial.begin(115200);
+  //Serial.begin(115200);
   WiFi.mode(WIFI_STA);
   while (!(WiFi.STA.started())) {
     delay(100);
   }
-
-  // Make LED blinkable
-  pinMode(LED_PIN, OUTPUT);
   
   // Scan for WiFi networks
   int n = WiFi.scanNetworks();
@@ -84,8 +77,8 @@ void setup() {
 void loop() {
   unsigned long startProbeMillis = millis(); // Each measure and sending cycle will take exactly 100ms
   uint16_t peakToPeak = probeMax4466();
-  Serial.print("Zero:0,Max:4095,Mic:");
-  Serial.println(peakToPeak);
+  //Serial.print("Zero:0,Max:4095,Mic:");
+  //Serial.println(peakToPeak);
 
   // Prepare ESP-NOW message
   myData.audio = peakToPeak;
@@ -117,16 +110,11 @@ void selectMac(){
 }
 
 void onSent(const uint8_t *mac_addr, esp_now_send_status_t status) {
-  if(status == ESP_NOW_SEND_SUCCESS && ledStatus == false){
-    digitalWrite(LED_PIN, HIGH);
-    ledStatus = true;
+  if(status == ESP_NOW_SEND_SUCCESS && failedTransmissionCounter){
+    failedTransmissionCounter = 0; // Reset counter on succesfull transmission
   }
   else if(status != ESP_NOW_SEND_SUCCESS){
     failedTransmissionCounter++; // Hopefully this doesn't overflow to quickly
-    if(ledStatus){
-      digitalWrite(LED_PIN, LOW);
-      ledStatus = false;
-    }
   }
 }
 

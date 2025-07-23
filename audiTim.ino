@@ -36,9 +36,6 @@ const long interval = 1000;
 unsigned long previousMillis = 0;
 int count = 0;
 
-// Variables for controlling LED
-const int LED_PIN = 2;
-
 //MAX4466
 const unsigned long sampleWindow = 50;  // Sample window width in mS (50 mS = 20Hz)
 int const AMP_PIN = 32;       // Analog Pin on the ESP32
@@ -74,9 +71,6 @@ void setup() {
   while (!(WiFi.STA.started())) {
     delay(100);
   }
-
-  // Make LED blinkable
-  pinMode(LED_PIN, OUTPUT);
 
   // ESP-Now
   esp_now_init();
