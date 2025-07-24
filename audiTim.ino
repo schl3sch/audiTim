@@ -10,6 +10,8 @@
 #include <ArduinoMqttClient.h> // Has to be installed manually
 #include <esp_now.h>
 #include "arduino_secrets.h" // Local file with secrets
+#include "time.h" // For Timestamps NTP
+
 
 // This sketch is executed on the Edge-Device.
 // It connects to WiFi and gives all sensor data from the other ESPs to the MQTT server.
@@ -28,7 +30,7 @@ char pass[] = SECRET_PASS;    // your network password (use for WPA, or use as k
 WiFiClient espClient;
 MqttClient mqttClient(espClient);
 int        port     = 1883;
-const char topic[]  = "arduino/simple";
+const char topic[]  = "dhbw/ai/si2023/5/max4466/0";
 const char MQTT_USER[] = "haenisch";
 const char MQTT_PASS[] = "geheim";
 const char broker[] = "aicon.dhbw-heidenheim.de"; // changed??
@@ -50,6 +52,9 @@ typedef struct struct_message {
 } struct_message; // Typedef
 uint16_t failedTransmissionCounter = 0;
 
+// Collect Data
+uint16_t collectEsp[4][10];
+int countEspTicks = 0; 
 
 void setup() {
   // Serial Setup
@@ -78,6 +83,9 @@ void setup() {
 }
 
 void loop() {
+    for (int i = 0; i < 4; i++){
+    collectEsp[i][countEspTicks] = 5000;
+  }
   unsigned long startProbeMillis = millis(); // Each measure and sending cycle will take exactly 100ms
   uint16_t peakToPeak = probeMax4466();
 
@@ -88,13 +96,20 @@ void loop() {
   Serial.print(",Local:");
   Serial.println(peakToPeak);
 
+  collectEsp[0][countEspTicks] = peakToPeak;
+
   // Non-blocking wait
   while((startProbeMillis + 100) > millis()){
     ; // Just chill here for the duration of 100ms
   }
+  
+  countEspTicks++;
+    if (countEspTicks >= 10)
+    countEspTicks = 0;
 }
 
 void onReceive(const esp_now_recv_info* info, const uint8_t* data, int len) {
+
   uint8_t identifier = info->src_addr[5];
 
   if (len != sizeof(struct_message)) {
@@ -108,6 +123,8 @@ void onReceive(const esp_now_recv_info* info, const uint8_t* data, int len) {
   Serial.print("Ref:4095,");
   Serial.printf("%u-Data:%u,", identifier, incomingData.audio); // %u for unsigned integer
   Serial.printf("%u-Error:%u\n", identifier, incomingData.error);
+
+  collectEsp[identifier - 1][countEspTicks] = incomingData.audio;
 }
 
 uint16_t probeMax4466(){
@@ -134,3 +151,8 @@ uint16_t probeMax4466(){
   return(signalMax - signalMin);  // max - min = peak-peak amplitude
 }
 
+void sendMqtt(){
+
+  configTime(0, 0, "de.pool.ntp.org");
+  time(nullptr)
+}

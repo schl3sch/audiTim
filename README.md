@@ -38,6 +38,7 @@ Bitte achtet auf folgende grundlegende Regeln im Projekt:
   - Kein \#define -> nur const (Einheitlich)
   - Kein while(!init){} (Nicht benötigt)
   - Funktion probeMax4466 muss in den Dateien identisch sein
+  - Externe Bibliotheken müssen mit Version angegeben sein
 
 ## 🔀 Git-Workflow (Feature-Branch-Modell)
 
