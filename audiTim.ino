@@ -18,10 +18,10 @@
 // Sensor data is being captured locally but also received from the other ESPs over ESP-Now.
 
 // Mac-Adresses:
-// ESP-1 (Edge):  94:54:C5:E8:A5:DC
-// ESP-2:         94:54:C5:E8:BC:40
-// ESP-3:         D4:8C:49:69:D5:74
-// ESP-4:         D4:8C:49:6A:EC:24
+// ESP-1 (Edge):  94:54:C5:E8:A5:DC -> Unchanged
+// ESP-2:         94:54:C5:E8:BC:40 -> DE:AD:C0:DE:00:02
+// ESP-3:         D4:8C:49:69:D5:74 -> DE:AD:C0:DE:00:03
+// ESP-4:         D4:8C:49:6A:EC:24 -> DE:AD:C0:DE:00:04
 
 char ssid[] = SECRET_SSID;    // your network SSID (name)
 char pass[] = SECRET_PASS;    // your network password (use for WPA, or use as key for WEP)
@@ -152,7 +152,6 @@ uint16_t probeMax4466(){
 }
 
 void sendMqtt(){
-
   configTime(0, 0, "de.pool.ntp.org");
-  time(nullptr)
+  time(nullptr);
 }
