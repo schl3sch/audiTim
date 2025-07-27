@@ -6,6 +6,7 @@
 #include <esp_now.h>
 #include <WiFi.h>
 #include <esp_wifi.h>
+#include "../probeMax.h"
 
 // This sketch is being executed on the 3 ESPs wich are not connected to wifi.
 // They only gather sound values and send them to the Edge-Device using ESP-Now
@@ -22,12 +23,6 @@ uint8_t myMac[] = {0xDE, 0xAD, 0xC0, 0xDE, 0x00, 0x00}; // Will get changed base
 
 // Standard channel should be 1 but could change
 int targetChannel = 1;
-
-//MAX4466
-const unsigned long sampleWindow = 50;  // Sample window width in mS (50 mS = 20Hz)
-int const AMP_PIN = 32;       // Analog Pin on the ESP32
-uint16_t maxAnalogRead = 4095; // For the ESP32 0-4095
-uint16_t sample;
 
 // ESP-Now
 typedef struct struct_message {
@@ -117,28 +112,3 @@ void onSent(const uint8_t *mac_addr, esp_now_send_status_t status) {
     failedTransmissionCounter++; // Hopefully this doesn't overflow to quickly
   }
 }
-
-uint16_t probeMax4466(){
-  unsigned long startMillis = millis(); // Start of sample window
-  uint16_t signalMax = 0;
-  uint16_t signalMin = maxAnalogRead;
-
-  // collect data for 50 mS
-  while (millis() - startMillis < sampleWindow)
-  {
-    sample = analogRead(AMP_PIN);
-    if (sample < maxAnalogRead)  // toss out spurious readings
-    {
-      if (sample > signalMax)
-      {
-        signalMax = sample;  // save just the max levels
-      }
-      else if (sample < signalMin)
-      {
-        signalMin = sample;  // save just the min levels
-      }
-    }
-  }
-  return(signalMax - signalMin);  // max - min = peak-peak amplitude
-}
-
