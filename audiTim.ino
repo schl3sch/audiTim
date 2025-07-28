@@ -74,34 +74,24 @@ void setup() {
   }
   Serial.println("You're connected to the network");
 
-// Connect to MQTT
-    mqttClient.setUsernamePassword(MQTT_USER, MQTT_PASS);
-    Serial.print("Attempting to connect to the MQTT broker: ");
-    Serial.println(broker);
+  // Connect to MQTT
+  mqttClient.setUsernamePassword(MQTT_USER, MQTT_PASS);
+  Serial.print("Attempting to connect to the MQTT broker: ");
+  Serial.println(broker);
 
-    while (!mqttClient.connect(broker, port)) {
-        Serial.print("MQTT connection failed! Error code = ");
-        Serial.println(mqttClient.connectError());
-        Serial.println("Trying again in 1 second");
-        delay(1000);
-    }
+  while (!mqttClient.connect(broker, port)) {
+      Serial.print("MQTT connection failed! Error code = ");
+      Serial.println(mqttClient.connectError());
+      Serial.println("Trying again in 1 second");
+      delay(1000);
+  }
 
-    Serial.println("You're connected to the MQTT broker!");
-    Serial.println();
-}
+  Serial.println("You're connected to the MQTT broker!");
+  Serial.println();
 
   // ESP-Now
   esp_now_init();
   esp_now_register_recv_cb(onReceive);
-
-  // Connect MQTT
-    if (!mqttClient.connect(broker, port)) {
-    Serial.print("MQTT connection failed! Error code = ");
-    Serial.println(mqttClient.connectError());
-  }
-  Serial.println("connected to MQTT");
-  mqttClient.setUsernamePassword(MQTT_USER, MQTT_PASS);
-
 }
 
 void loop() {
@@ -152,21 +142,22 @@ void onReceive(const esp_now_recv_info* info, const uint8_t* data, int len) {
   collectEsp[identifier - 1][countEspTicks] = incomingData.audio;
 }
 
-void setupMqtt()
-
 void sendMqtt(int count)
 {
   configTime(0, 0, "de.pool.ntp.org");
   timestamp = time(nullptr);
     doc["timestamp"] = timestamp;
-    for (int i = 0; i < 40; i++) {
-        doc["value"][i] = *(&collectEsp[0][0]) + i);
+    for (int i = 0; i < 40; i++) { // 2D Array -> Array by Pointer
+        doc["value"][i] = *(&collectEsp[0][0] + i); 
     }
     doc["sequence"] = count;
     doc["meta"] = "null";
-    char jsonString[JSONSIZE];
-    serializeJsonPretty(doc, jsonString);
-    sendMqttMessage(topic, jsonString);
+    char jsonString[8192];
+    serializeJson(doc, jsonString);
+    Serial.println(strlen(jsonString));
+    mqttClient.beginMessage(topic);
+    mqttClient.println(jsonString);
+    mqttClient.endMessage();
     doc.clear();
 }
 
