@@ -10,6 +10,7 @@
 #include <ArduinoMqttClient.h> // Has to be installed manually
 #include <esp_now.h>
 #include "arduino_secrets.h" // Local file with secrets
+#include "probeMax.h" // Unified max4466 probe code
 #include "time.h" // For Timestamps NTP
 
 
@@ -37,12 +38,6 @@ const char broker[] = "aicon.dhbw-heidenheim.de"; // changed??
 const long interval = 1000;
 unsigned long previousMillis = 0;
 int count = 0;
-
-//MAX4466
-const unsigned long sampleWindow = 50;  // Sample window width in mS (50 mS = 20Hz)
-int const AMP_PIN = 32;       // Analog Pin on the ESP32
-uint16_t maxAnalogRead = 4095; // For the ESP32 0-4095
-uint16_t sample;
 
 // ESP-Now
 uint8_t empfaengerMac[] = {0xDE, 0x8C, 0x49, 0x69, 0xD5, 0x74};
@@ -120,30 +115,6 @@ void onReceive(const esp_now_recv_info* info, const uint8_t* data, int len) {
   Serial.printf("%u-Error:%u\n", identifier, incomingData.error);
 
   collectEsp[identifier - 1][countEspTicks] = incomingData.audio;
-}
-
-uint16_t probeMax4466(){
-  unsigned long startMillis = millis(); // Start of sample window
-  uint16_t signalMax = 0;
-  uint16_t signalMin = maxAnalogRead;
-
-  // collect data for 50 mS
-  while (millis() - startMillis < sampleWindow)
-  {
-    sample = analogRead(AMP_PIN);
-    if (sample < maxAnalogRead)  // toss out spurious readings
-    {
-      if (sample > signalMax)
-      {
-        signalMax = sample;  // save just the max levels
-      }
-      else if (sample < signalMin)
-      {
-        signalMin = sample;  // save just the min levels
-      }
-    }
-  }
-  return(signalMax - signalMin);  // max - min = peak-peak amplitude
 }
 
 void sendMqtt(){
