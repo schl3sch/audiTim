@@ -59,23 +59,18 @@ int countEspTicks = 0;
 void setup() {
   // Serial Setup
   Serial.begin(115200);
+  delay(1000);
+
 
   // Connect to WiFi
-  /*Serial.print("Attempting to connect to WPA SSID: ");
-  Serial.println(ssid);
-  while (WiFi.begin(ssid, pass) != WL_CONNECTED) {
+  WiFi.mode(WIFI_STA); // Mandatory for ESP-Now
+  WiFi.begin(ssid, pass); // Connect to Network
+  while (WiFi.status() != WL_CONNECTED) {
     // failed, retry
     Serial.print(".");
-    delay(5000);
+    delay(500);
   }
   Serial.println("You're connected to the network");
-  Serial.println();*/
-
-  // ESP-NOW
-  WiFi.mode(WIFI_STA);
-  while (!(WiFi.STA.started())) {
-    delay(100);
-  }
 
   // ESP-Now
   esp_now_init();
@@ -83,7 +78,7 @@ void setup() {
 }
 
 void loop() {
-    for (int i = 0; i < 4; i++){
+  for (int i = 0; i < 4; i++){
     collectEsp[i][countEspTicks] = 5000;
   }
   unsigned long startProbeMillis = millis(); // Each measure and sending cycle will take exactly 100ms
