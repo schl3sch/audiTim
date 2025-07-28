@@ -12,6 +12,7 @@
 #include "arduino_secrets.h" // Local file with secrets
 #include "probeMax.h" // Unified max4466 probe code
 #include "time.h" // For Timestamps NTP
+#include <ArduinoJson.h> // For MQTT Json
 
 
 // This sketch is executed on the Edge-Device.
@@ -51,6 +52,12 @@ uint16_t failedTransmissionCounter = 0;
 uint16_t collectEsp[4][10];
 int countEspTicks = 0; 
 
+// JSON
+JsonDocument doc;
+
+// NTP 
+time_t timestamp;
+
 void setup() {
   // Serial Setup
   Serial.begin(115200);
@@ -70,6 +77,15 @@ void setup() {
   // ESP-Now
   esp_now_init();
   esp_now_register_recv_cb(onReceive);
+
+  // Connect MQTT
+    if (!mqttClient.connect(broker, port)) {
+    Serial.print("MQTT connection failed! Error code = ");
+    Serial.println(mqttClient.connectError());
+  }
+  Serial.println("connected to MQTT");
+  mqttClient.setUsernamePassword(MQTT_USER, MQTT_PASS);
+
 }
 
 void loop() {
@@ -96,6 +112,10 @@ void loop() {
   countEspTicks++;
     if (countEspTicks >= 10)
     countEspTicks = 0;
+
+  mqttClient.poll(); // hält MQTT-Verbindung aktiv
+  sendMQtt();
+
 }
 
 void onReceive(const esp_now_recv_info* info, const uint8_t* data, int len) {
@@ -113,11 +133,23 @@ void onReceive(const esp_now_recv_info* info, const uint8_t* data, int len) {
   Serial.print("Ref:4095,");
   Serial.printf("%u-Data:%u,", identifier, incomingData.audio); // %u for unsigned integer
   Serial.printf("%u-Error:%u\n", identifier, incomingData.error);
-
   collectEsp[identifier - 1][countEspTicks] = incomingData.audio;
 }
 
-void sendMqtt(){
+void sendMqtt(int count)
+{
   configTime(0, 0, "de.pool.ntp.org");
-  time(nullptr);
+  timestamp = time(nullptr);
+    doc["timestamp"] = timestamp;
+    for (int i = 0; i < 40; i++) {
+        doc["value"][i] = &(&collectEsp[0][0]) + i);
+    }
+    doc["sequence"] = count;
+    doc["meta"] = "null";
+    char jsonString[JSONSIZE];
+    serializeJsonPretty(doc, jsonString);
+    sendMqttMessage(topic, jsonString);
+    doc.clear();
 }
+
+
