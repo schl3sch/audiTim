@@ -7,13 +7,17 @@
 
     outputs = { self, nixpkgs }: 
         let 
-            pkgs = import nixpkgs { system = "x86_64-linux"; };
+            pkgs = import nixpkgs { 
+                system = "x86_64-linux"; 
+                config.allowUnfree = true;
+            };
             system = "x86_64-linux";
         in {
             devShells.x86_64-linux.default = pkgs.mkShell {
                 buildInputs = [
                     pkgs.arduino-cli
                     pkgs.arduino-ide
+                    pkgs.mqtt-explorer
                 ];
 
                 shellHook = ''

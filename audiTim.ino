@@ -4,7 +4,8 @@
 // Select ESP32 Dev Module as your board
 
 // Libraries:
-// ArduinoMqttClient@0.1.8
+// ArduinoMqttClient by Arduino@0.1.8
+// ArduinoJson by Benoit@7.4.2
 
 #include <WiFi.h> // Is installed automatically. Don't install additional libs
 #include <ArduinoMqttClient.h> // Has to be installed manually
@@ -13,6 +14,7 @@
 #include "probeMax.h" // Unified max4466 probe code
 #include "time.h" // For Timestamps NTP
 #include <ArduinoJson.h> // For MQTT Json
+//#include "esp_wpa2.h" // For PEAP StudentenWlan
 
 
 // This sketch is executed on the Edge-Device.
@@ -25,8 +27,8 @@
 // ESP-3:         D4:8C:49:69:D5:74 -> DE:AD:C0:DE:00:03
 // ESP-4:         D4:8C:49:6A:EC:24 -> DE:AD:C0:DE:00:04
 
-char ssid[] = SECRET_SSID;    // your network SSID (name)
-char pass[] = SECRET_PASS;    // your network password (use for WPA, or use as key for WEP)
+const char ssid[] = SECRET_SSID;    // your network SSID
+const char pass[] = SECRET_PASS;    // your network password
 
 // MQTT Settings etc...
 WiFiClient espClient;
@@ -38,7 +40,7 @@ const char MQTT_PASS[] = "geheim";
 const char broker[] = "aicon.dhbw-heidenheim.de"; // changed??
 const long interval = 1000;
 unsigned long previousMillis = 0;
-int count = 0;
+unsigned long  count = 0;
 
 // ESP-Now
 uint8_t empfaengerMac[] = {0xDE, 0x8C, 0x49, 0x69, 0xD5, 0x74};
@@ -64,31 +66,12 @@ void setup() {
   Serial.begin(115200);
   delay(1000);
 
-
-  // Connect to WiFi
-  WiFi.mode(WIFI_STA); // Mandatory for ESP-Now
-  WiFi.begin(ssid, pass); // Connect to Network
-  while (WiFi.status() != WL_CONNECTED) {
-    // failed, retry
-    Serial.print(".");
-    delay(500);
-  }
-  Serial.println("You're connected to the network");
+  // Connect to enterprise WiFi
+  //connectToStudentenWlan();
+  connectWPA2();
 
   // Connect to MQTT
-  mqttClient.setUsernamePassword(MQTT_USER, MQTT_PASS);
-  Serial.print("Attempting to connect to the MQTT broker: ");
-  Serial.println(broker);
-
-  while (!mqttClient.connect(broker, port)) {
-      Serial.print("MQTT connection failed! Error code = ");
-      Serial.println(mqttClient.connectError());
-      Serial.println("Trying again in 1 second");
-      delay(1000);
-  }
-
-  Serial.println("You're connected to the MQTT broker!");
-  Serial.println();
+  connectMqtt();
 
   // ESP-Now
   esp_now_init();
@@ -117,16 +100,13 @@ void loop() {
   }
   
   countEspTicks++;
-    if (countEspTicks >= 10)
+  if (countEspTicks >= 10){
     countEspTicks = 0;
-
-  mqttClient.poll(); // hält MQTT-Verbindung aktiv
-  sendMqtt(0);
-
+    sendMqtt(count++);
+  }
 }
 
 void onReceive(const esp_now_recv_info* info, const uint8_t* data, int len) {
-
   uint8_t identifier = info->src_addr[5];
 
   if (len != sizeof(struct_message)) {
@@ -143,19 +123,79 @@ void onReceive(const esp_now_recv_info* info, const uint8_t* data, int len) {
   collectEsp[identifier - 1][countEspTicks] = incomingData.audio;
 }
 
-void sendMqtt(int count)
-{
+void sendMqtt(int count){
   configTime(0, 0, "de.pool.ntp.org");
   timestamp = time(nullptr);
-    doc["timestamp"] = timestamp;
-    for (int i = 0; i < 40; i++) { // 2D Array -> Array by Pointer
-        doc["value"][i] = *(&collectEsp[0][0] + i); 
+  doc["timestamp"] = timestamp;
+  for (int i = 0; i < 40; i++) { // 2D Array -> Array by Pointer
+      doc["value"][i] = *(&collectEsp[0][0] + i); 
+  }
+  doc["sequence"] = count;
+  doc["meta"] = "null";
+  serializeJson(doc, jsonString);
+
+  // In case of disconnect
+  if (WiFi.status() != WL_CONNECTED) {
+    connectWPA2();
+  }
+  if (!mqttClient.connected()) {
+    if (WiFi.status() != WL_CONNECTED) {
+        connectWPA2();
     }
-    doc["sequence"] = count;
-    doc["meta"] = "null";
-    serializeJson(doc, jsonString);
-    mqttClient.beginMessage(topic);
-    mqttClient.println(jsonString);
-    mqttClient.endMessage();
-    doc.clear();
+    mqttClient.stop();
+    connectMqtt();
+  }
+
+  mqttClient.beginMessage(topic);
+  mqttClient.println(jsonString);
+  mqttClient.endMessage();
+  doc.clear();
+}
+
+/*void connectToStudentenWlan(){
+  WiFi.disconnect(true); // Disconnect before setup
+  WiFi.mode(WIFI_STA); // Mandatory for ESP-Now
+
+  // WPA2 Enterprise config
+  esp_wifi_sta_wpa2_ent_set_identity((uint8_t *)SECRET_USERNAME, strlen(SECRET_USERNAME));
+  esp_wifi_sta_wpa2_ent_set_username((uint8_t *)SECRET_USERNAME, strlen(SECRET_USERNAME));
+  esp_wifi_sta_wpa2_ent_set_password((uint8_t *)SECRET_USERPASS, strlen(SECRET_USERPASS));
+  esp_wpa2_config_t config = WPA2_CONFIG_INIT_DEFAULT();
+  esp_wifi_sta_wpa2_ent_enable(&config);
+  
+  // Start connection
+  WiFi.begin("Studenten WLAN");
+  
+  while (WiFi.status() != WL_CONNECTED) {
+    // failed, retry
+    Serial.print(".");
+    delay(500);
+  }
+  Serial.println("You're connected to the network");
+}*/
+
+void connectWPA2(){
+  WiFi.disconnect(true); // Disconnect before setup
+  WiFi.mode(WIFI_STA); // Mandatory for ESP-Now
+  // Start connection
+  WiFi.begin(ssid, pass);
+  
+  while (WiFi.status() != WL_CONNECTED) {
+    // failed, retry
+    Serial.print(".");
+    delay(500);
+  }
+  Serial.println("You're connected to the network");
+}
+
+void connectMqtt(){
+  mqttClient.setUsernamePassword(MQTT_USER, MQTT_PASS);
+  Serial.print("Attempting MQTT connection");
+  while (!mqttClient.connect(broker, port)) {
+    Serial.print("MQTT connection failed! Error code = ");
+    Serial.println(mqttClient.connectError());
+    Serial.println("Trying again in 1 second");
+    delay(1000);
+  }
+  Serial.println("You're connected to the MQTT broker!");
 }
