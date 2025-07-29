@@ -54,6 +54,7 @@ int countEspTicks = 0;
 
 // JSON
 JsonDocument doc;
+char jsonString[400];
 
 // NTP 
 time_t timestamp;
@@ -152,13 +153,9 @@ void sendMqtt(int count)
     }
     doc["sequence"] = count;
     doc["meta"] = "null";
-    char jsonString[8192];
     serializeJson(doc, jsonString);
-    Serial.println(strlen(jsonString));
     mqttClient.beginMessage(topic);
     mqttClient.println(jsonString);
     mqttClient.endMessage();
     doc.clear();
 }
-
-
