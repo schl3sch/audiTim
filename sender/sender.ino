@@ -7,6 +7,7 @@
 #include <WiFi.h>
 #include <esp_wifi.h>
 #include "../probeMax.h"
+#include "../inmp441.h"
 
 // This sketch is being executed on the 3 ESPs wich are not connected to wifi.
 // They only gather sound values and send them to the Edge-Device using ESP-Now
@@ -33,7 +34,14 @@ uint16_t failedTransmissionCounter = 0;
 struct_message myData; // Create a struct_message called myData
 
 void setup() {
-  //Serial.begin(115200);
+  Serial.begin(115200);
+
+  // INMP441 setup I2S
+  /*i2s_install();
+  i2s_setpin();
+  i2s_start(I2S_PORT);
+  delay(500);*/
+
   WiFi.mode(WIFI_STA);
   while (!(WiFi.STA.started())) {
     delay(100);
@@ -85,6 +93,7 @@ void loop() {
   while((startProbeMillis + 100) > millis()){
     ; // Just chill here for the duration of 100ms
   }
+  //inmpLoop();
 }
 
 // This function recognizes on wich ESP the code is being executed and changes MAC/Identifier accordingly
