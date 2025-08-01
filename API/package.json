@@ -1,0 +1,26 @@
+{
+  "name": "auditim-backend",
+  "version": "1.0.0",
+  "description": "Dies ist das zentrale Code-Repository für unser Software-Engineering-Projekt **audiTim**.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/StmMtn/audiTim-BackEnd.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/StmMtn/audiTim-BackEnd/issues"
+  },
+  "homepage": "https://github.com/StmMtn/audiTim-BackEnd#readme",
+  "dependencies": {
+    "@influxdata/influxdb-client": "^1.35.0",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.0",
+    "express": "^5.1.0"
+  }
+}
