@@ -1,0 +1,82 @@
+# --- ROOT ---
+.env
+
+# --- API ---
+/API/node_modules/
+/API/mock-data/dummyData.json
+/API/package-lock.json
+
+# --- Arduino ---
+/Arduino/build/
+/Arduino/*.bin
+/Arduino/*.elf
+/Arduino/*.hex
+/Arduino/*.tmp
+/Arduino/*.swp
+/Arduino/*~
+/Arduino/*.suo
+/Arduino/*.dep
+/Arduino/*.d
+/Arduino/arduino_secrets.h
+/Arduino/.vscode/
+
+# --- Blender ---
+/Blender/*.blend[1-9]
+
+# --- DB ---
+/DB/node_modules/
+/DB/package-lock.json
+
+# --- Documentation ---
+/Documentation/ProjektSe/dokumentation.lot
+/Documentation/ProjektSe/dokumentation.aux
+/Documentation/ProjektSe/dokumentation.bbl
+/Documentation/ProjektSe/dokumentation.bcf
+/Documentation/ProjektSe/dokumentation.blg
+/Documentation/ProjektSe/dokumentation.fdb_latexmk
+/Documentation/ProjektSe/dokumentation.fls
+/Documentation/ProjektSe/dokumentation.lof
+/Documentation/ProjektSe/dokumentation.log
+/Documentation/ProjektSe/dokumentation.lol
+/Documentation/ProjektSe/dokumentation.lot
+/Documentation/ProjektSe/dokumentation.synctex.gz
+/Documentation/ProjektSe/dokumentation.toc
+/Documentation/ProjektSe/dokumentation.bcf-SAVE-ERROR
+/Documentation/ProjektSe/dokumentation.bbl-SAVE-ERROR
+
+# --- Frontend ---
+/Frontend/dist
+/Frontend/tmp
+/Frontend/out-tsc
+/Frontend/bazel-out
+
+/Frontend/node_modules
+/Frontend/package-lock.json
+/Frontend/npm-debug.log
+/Frontend/yarn-error.log
+
+/Frontend/.idea/
+/Frontend/.project
+/Frontend/.classpath
+/Frontend/.c9/
+/Frontend/*.launch
+/Frontend/.settings/
+/Frontend/*.sublime-workspace
+
+/Frontend/.vscode/*
+!/Frontend/.vscode/settings.json
+!/Frontend/.vscode/tasks.json
+!/Frontend/.vscode/launch.json
+!/Frontend/.vscode/extensions.json
+/Frontend/.history/*
+
+/Frontend/.angular/cache
+/Frontend/.sass-cache/
+/Frontend/connect.lock
+/Frontend/coverage
+/Frontend/libpeerconnection.log
+/Frontend/testem.log
+/Frontend/typings
+
+/Frontend/.DS_Store
+/Frontend/Thumbs.db
