@@ -1,0 +1,27 @@
+\begin{landscape}
+\chapter{SFMEA-Analyse}
+\small
+\begin{longtable}{|p{3.4cm}|p{3.4cm}|p{3.4cm}|p{3.4cm}|c|c|c|c|p{3.4cm}|}
+
+    \hline
+    \textbf{Systemfunktion} & \textbf{Fehlermöglichkeit} & \textbf{Fehlerursache} & \textbf{Fehlerfolge} & \textbf{B} & \textbf{A} & \textbf{E} & \textbf{RPZ} & \textbf{Maßnahmen} \\
+    \hline
+    \endhead
+
+    Dezibel erfassen & Falsche oder keine Messwerte & Mikrofon defekt, Sensor ungeeignet & Ungenaue oder keine Daten & 8 & 6 & 3 & 144 & Robuste Mikros, Kalibrierung, Ersatzsensor bereit \\
+    \hline
+    ESP kommuniziert nicht mit anderen & Keine oder fehlerhafte Datenübertragung & WLAN-Probleme, falsches Protokoll & Daten gehen verloren, keine Heatmap & 7 & 5 & 4 & 140 & Netzwerk prüfen, Fallback, Fehler-Logs \\
+    \hline
+    Daten werden nicht ans Backend gesendet & ESP schickt keine Daten & Stromausfall, Codecrash, Timeout & Datenlücken, unvollständige Analyse & 7 & 5 & 3 & 105 & Watchdog, Logging, häufigere Syncs \\
+    \hline
+    GitHub-Zugang fehlerhaft & Kein Zugriff oder Merge-Konflikte & Rechte falsch, keine Git-Strategie & Team kann nicht arbeiten & 6 & 4 & 2 & 48 & Git-Workflow, Rechte regeln \\
+    \hline
+    Backend speichert keine Daten & Fehlerhafte Speicherung / Absturz & Server voll, Codefehler & Datenverlust, Ausfall & 9 & 4 & 4 & 144 & Monitoring, Logging, Backups, Testlauf \\
+    \hline
+    Daten werden falsch ausgewertet & Heatmap falsch / Werte inkonsistent & Algorithmusfehler, unvollständige Daten & Falsche Rückschlüsse & 6 & 4 & 3 & 72 & Testdaten prüfen, Algo validieren, Visualisierung testen \\
+    \hline
+    ESPs messen nicht synchron & Unterschiedliche Messzeitpunkte & Kein Sync, NTP fehlt & Daten nicht vergleichbar & 7 & 5 & 4 & 140 & NTP-Sync, Zeitstempel ergänzen \\
+    \hline
+
+\end{longtable}
+\end{landscape}
