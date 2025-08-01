@@ -70,11 +70,25 @@ die Visualisierung in einfachen Liniendiagrammen wird mit der ng2-charts-Bibliot
 \begin{center}
   \includegraphics[width=1\textwidth]{../images/LinechartFE.png}
 \end{center}
-Für eine 2D-Heatmap-Darstellung der Sensordaten wird die Bibliothek heatmap.js verwendet.
 
 \subsection{Backend}
 Das Backend wurde mit Node.js und dem minimalistischen Framework Express.js umgesetzt. 
-Express erlaubt eine schlanke und flexible Umsetzung von RESTful APIs und ist besonders geeignet für einfache, performante Serverlogik. 
+Express ist das am weitesten verbreitete Node.js-Framework für Webserver und APIs. 
+Es bietet eine ausgereifte Middleware-Architektur, die sehr flexibel und modular ist. 
+Im Vergleich zu ähnlich minimalistischen Frameworks wie Koa, 
+das von den gleichen Entwicklern stammt, 
+bietet Express mehr out-of-the-box Funktionalitäten und eine größere Community mit umfangreichen Plugins und Support. \cite{betterstack2025koavsexpress,appventurez2025nodejsframework}
+
+Koa hingegen ist moderner und basiert stärker auf ES6 Features wie async/await, was den Code oft sauberer macht. 
+Allerdings ist Koa weniger „batteries included“ und erfordert mehr Initialaufwand und zusätzliche Libraries, 
+um Funktionen bereitzustellen, die Express standardmäßig mitbringt. 
+Für dieses Projekt, welches einen schnellen Einstieg, umfangreiche Dokumentation und stabile Middleware braucht, 
+ist Express daher die pragmatischere Wahl.
+Zudem sind Gruppenmitglieder bereits mit Express vertraut, was die Einarbeitungszeit verkürzt und die Produktivität steigert. 
+
+
+
+
 Die Anbindung an eine InfluxDB erfolgt über die offizielle Client-Bibliothek. Die Entscheidung für InfluxDB basiert auf der Empfehlung der "Verteilten Systeme"-Dozenten sowie der nahtlosen Integration in das Node.js-Backend, was die Implementierung vereinfacht.
 Neben dem Abrufen historischer Sensorwerte werden auch Funktionen zum Schreiben von Dummy-Daten bereitgestellt.
 Diese werden, solange die Verbindung zu den wirklichen Sensorwerten noch nicht hergestellt ist, zum Testen verwendet.

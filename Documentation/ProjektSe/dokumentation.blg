@@ -7,45 +7,49 @@ Reallocating 'name_of_file' (item size: 1) to 10 items.
 Database file #1: ArbeitBib.bib
 Warning--entry type for "oltheten2019micplacement" isn't style-file defined
 --line 65 of file ArbeitBib.bib
-You've used 1 entry,
+Warning--entry type for "betterstack2025koavsexpress" isn't style-file defined
+--line 85 of file ArbeitBib.bib
+Warning--entry type for "appventurez2025nodejsframework" isn't style-file defined
+--line 103 of file ArbeitBib.bib
+You've used 3 entries,
             2909 wiz_defined-function locations,
-            645 strings with 4913 characters,
-and the built_in function-call counts, 2132 in all, are:
-= -- 327
-> -- 24
+            656 strings with 5276 characters,
+and the built_in function-call counts, 6672 in all, are:
+= -- 1045
+> -- 72
 < -- 0
-+ -- 146
-- -- 7
-* -- 159
-:= -- 478
-add.period$ -- 2
-call.type$ -- 1
-change.case$ -- 14
-chr.to.int$ -- 1
-cite$ -- 1
-duplicate$ -- 11
-empty$ -- 27
-format.name$ -- 9
-if$ -- 369
++ -- 464
+- -- 21
+* -- 509
+:= -- 1462
+add.period$ -- 6
+call.type$ -- 3
+change.case$ -- 42
+chr.to.int$ -- 3
+cite$ -- 3
+duplicate$ -- 33
+empty$ -- 79
+format.name$ -- 27
+if$ -- 1169
 int.to.chr$ -- 5
 int.to.str$ -- 0
 missing$ -- 0
-newline$ -- 8
-num.names$ -- 10
-pop$ -- 9
+newline$ -- 18
+num.names$ -- 30
+pop$ -- 27
 preamble$ -- 1
-purify$ -- 15
+purify$ -- 45
 quote$ -- 0
-skip$ -- 10
+skip$ -- 28
 stack$ -- 0
-substring$ -- 442
-swap$ -- 1
-text.length$ -- 14
+substring$ -- 1416
+swap$ -- 3
+text.length$ -- 42
 text.prefix$ -- 0
 top$ -- 0
-type$ -- 4
+type$ -- 12
 warning$ -- 0
-while$ -- 21
+while$ -- 63
 width$ -- 0
-write$ -- 16
-(There was 1 warning)
+write$ -- 44
+(There were 3 warnings)
