@@ -1,0 +1,11 @@
+<h1>Sensor Data Tool</h1>
+
+<div style="text-align: center; margin: 20px;">
+  <button (click)="loadAllSensors()">Load All Sensors</button>
+  <button (click)="loadNewSensors()">Load New Sensors</button>
+  <button (click)="generateDummy()">Generate Dummy Data</button>
+</div>
+
+<app-sensor-chart *ngIf="chartData()" [sensorResponse]="chartData()"></app-sensor-chart>
+
+<pre *ngIf="textData()">{{ textData() | json }}</pre>
