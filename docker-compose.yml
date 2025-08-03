@@ -37,7 +37,9 @@ services:
       - sensor-net
 
   nodered:
-    image: nodered/node-red:3.1
+    build:
+      context: ./DB
+    image: nodered:v1
     container_name: nodered
     ports:
       - "1880:1880"
