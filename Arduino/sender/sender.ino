@@ -7,7 +7,7 @@
 #include <WiFi.h>
 #include <esp_wifi.h>
 #include "../probeMax.h"
-#include "../inmp441.h"
+//#include "../inmp441.h"
 
 // This sketch is being executed on the 3 ESPs wich are not connected to wifi.
 // They only gather sound values and send them to the Edge-Device using ESP-Now
@@ -30,8 +30,12 @@ typedef struct struct_message {
   uint16_t audio; // 0-4095 Mic volume
   uint16_t error; // Error = Number of failed messages since last success
 } struct_message; // Typedef
-uint16_t failedTransmissionCounter = 0;
 struct_message myData; // Create a struct_message called myData
+
+uint16_t failedTransmissionCounter = 0;
+unsigned long failed = 0;
+unsigned long succes = 0;
+
 
 void setup() {
   Serial.begin(115200);
@@ -80,8 +84,12 @@ void setup() {
 void loop() {
   unsigned long startProbeMillis = millis(); // Each measure and sending cycle will take exactly 100ms
   uint16_t peakToPeak = probeMax4466();
-  //Serial.print("Zero:0,Max:4095,Mic:");
-  //Serial.println(peakToPeak);
+  /*Serial.print("Zero:0,Max:4095,Mic:");
+  Serial.print(peakToPeak);
+  Serial.print(",failed:");
+  Serial.print(failed);
+  Serial.print(",succes:");
+  Serial.println(succes);*/
 
   // Prepare ESP-NOW message
   myData.audio = peakToPeak;
@@ -113,11 +121,12 @@ void selectMac(){
   }
 }
 
+// Callback espNOW when message has been sent
 void onSent(const uint8_t *mac_addr, esp_now_send_status_t status) {
-  if(status == ESP_NOW_SEND_SUCCESS && failedTransmissionCounter){
-    failedTransmissionCounter = 0; // Reset counter on succesfull transmission
+  /*if(status == ESP_NOW_SEND_SUCCESS && failedTransmissionCounter){
+    succes++;
   }
   else if(status != ESP_NOW_SEND_SUCCESS){
-    failedTransmissionCounter++; // Hopefully this doesn't overflow to quickly
-  }
+    failed++;
+  }*/
 }
