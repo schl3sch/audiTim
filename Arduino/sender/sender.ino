@@ -7,7 +7,7 @@
 #include <WiFi.h>
 #include <esp_wifi.h>
 #include "../probeMax.h"
-//#include "../inmp441.h"
+//#include "../inmp441.h" // I2S Microphone
 
 // This sketch is being executed on the 3 ESPs wich are not connected to wifi.
 // They only gather sound values and send them to the Edge-Device using ESP-Now

@@ -10,8 +10,9 @@
 #include <WiFi.h> // Is installed automatically. Don't install additional libs
 #include <ArduinoMqttClient.h> // Has to be installed manually
 #include <esp_now.h>
-#include "arduino_secrets.h" // Local file with secrets
-#include "probeMax.h" // Unified max4466 probe code
+#include "../arduino_secrets.h" // Local file with secrets
+#include "../probeMax.h" // Unified max4466 probe code
+//#include "../inmp441.h" // I2S Microphone
 #include "time.h" // For Timestamps NTP
 #include <ArduinoJson.h> // For MQTT Json
 //#include "esp_wpa2.h" // For PEAP StudentenWlan
