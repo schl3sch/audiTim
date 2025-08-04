@@ -45,8 +45,7 @@
         "y": 300,
         "wires": [
             [
-                "7701405c8a7ed7d9",
-                "56c6c30b814ad4ac"
+                "7701405c8a7ed7d9"
             ]
         ]
     },
@@ -65,24 +64,6 @@
         "statusType": "auto",
         "x": 420,
         "y": 220,
-        "wires": []
-    },
-    {
-        "id": "56c6c30b814ad4ac",
-        "type": "influxdb out",
-        "z": "6761cd81a24d274a",
-        "influxdb": "0ada58720cc34a54",
-        "name": "Influx-Node",
-        "measurement": "sensor_data",
-        "precision": "ms",
-        "retentionPolicy": "",
-        "database": "database",
-        "precisionV18FluxV20": "ms",
-        "retentionPolicyV18Flux": "",
-        "org": "DHBW",
-        "bucket": "DB",
-        "x": 630,
-        "y": 260,
         "wires": []
     },
     {
@@ -132,20 +113,5 @@
         "willMsg": {},
         "userProps": "",
         "sessionExpiry": ""
-    },
-    {
-        "id": "0ada58720cc34a54",
-        "type": "influxdb",
-        "hostname": "127.0.0.1",
-        "port": "8086",
-        "protocol": "http",
-        "database": "database",
-        "name": "InfluxDB",
-        "usetls": false,
-        "tls": "",
-        "influxdbVersion": "2.0",
-        "url": "http://influxdb:8086",
-        "timeout": "10",
-        "rejectUnauthorized": false
     }
 ]
