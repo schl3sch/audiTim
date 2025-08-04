@@ -113,6 +113,96 @@ app.get('/api/generate', async (req, res) => {
   }
 });
 
+// Read latest value per sensor
+// calculate Array for heatmap
+app.get('/api/getArray', async (req, res) => {
+  const fluxQuery = `
+    from(bucket: "${bucket}")
+      |> range(start: -30d)
+      |> filter(fn: (r) => r._measurement == "sensor_data")
+      |> filter(fn: (r) => r._field == "decibel")
+      |> group(columns: ["sensor_id"])
+      |> sort(columns: ["_time"], desc: true)
+      |> first()
+  `;
+
+  const sensorMapping = {
+    d1: "sensor1", // top-left
+    d2: "sensor2", // top-right
+    d3: "sensor3", // bottom-left
+    d4: "sensor4", // bottom-right
+  };
+
+  const sensorValues = {}; // d1..d4
+  const rawSensorData = []; // vollständige Rückgabe
+
+  try {
+    for await (const { values, tableMeta } of queryApi.iterateRows(fluxQuery)) {
+      const row = tableMeta.toObject(values);
+      const sid = row.sensor_id;
+      const decibel = row._value;
+
+      rawSensorData.push({ sensor_id: sid, decibel }); // alle empfangenen Werte speichern
+
+      if (Object.values(sensorMapping).includes(sid)) {
+        const key = Object.entries(sensorMapping).find(([_, val]) => val === sid)?.[0];
+        if (key) {
+          sensorValues[key] = decibel;
+        }
+      }
+    }
+
+    if (Object.keys(sensorValues).length !== 4) {
+      return res.status(400).json({
+        error: "Not all 4 required sensors present in data.",
+        expectedSensors: sensorMapping,
+        receivedMapped: sensorValues,
+        receivedRaw: rawSensorData
+      });
+    }
+
+    const grid = [];
+    for (let row = 0; row < 10; row++) {
+      const y = row / 9;
+      const rowData = [];
+      for (let col = 0; col < 10; col++) {
+        const x = col / 9;
+        const V =
+          sensorValues.d1 * (1 - x) * (1 - y) +
+          sensorValues.d2 * x * (1 - y) +
+          sensorValues.d3 * (1 - x) * y +
+          sensorValues.d4 * x * y;
+        rowData.push(Number(V.toFixed(2)));
+      }
+      grid.push(rowData);
+    }
+
+    res.json({ heatmap: grid });
+
+  } catch (err) {
+    console.error('❌ Query failed:', err);
+    res.status(500).send('Query failed');
+  }
+});
+
+
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`API listening on port ${PORT}`);
 });
+
+// Graceful shutdown (fast AF)
+const shutdown = async () => {
+  console.log('🛑 Shutting down API service...');
+
+  try {
+    await writeApi.close();
+    console.log('✅ Influx write API closed.');
+  } catch (e) {
+    console.warn('⚠️ Error closing write API:', e.message);
+  }
+
+  process.exit(0);
+};
+
+// Handle Docker stop (SIGTERM)
+process.on('SIGTERM', shutdown);

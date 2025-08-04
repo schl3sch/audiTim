@@ -1,5 +1,7 @@
 <h1>Sensor Data Tool</h1>
 
+<app-array-test></app-array-test>
+
 <div style="text-align: center; margin: 20px;">
   <button (click)="loadAllSensors()">Load All Sensors</button>
   <button (click)="loadNewSensors()">Load New Sensors</button>
@@ -11,3 +13,4 @@
 <pre *ngIf="textData()">{{ textData() | json }}</pre>
 
 <app-heatmap></app-heatmap>
+
