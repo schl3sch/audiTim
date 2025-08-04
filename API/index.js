@@ -113,6 +113,74 @@ app.get('/api/generate', async (req, res) => {
   }
 });
 
+// Read latest value per sensor
+// calculate Array for heatmap
+app.get('/api/getArray', async (req, res) => {
+  const fluxQuery = `
+    from(bucket: "${bucket}")
+      |> range(start: -30d)
+      |> filter(fn: (r) => r._measurement == "sensor_data")
+      |> filter(fn: (r) => r._field == "decibel")
+      |> group(columns: ["sensor_id"])
+      |> sort(columns: ["_time"], desc: true)
+      |> first()
+  `;
+
+  const sensorMapping = {
+    d1: "sensor_1", // top-left
+    d2: "sensor_2", // top-right
+    d3: "sensor_3", // bottom-left
+    d4: "sensor_4", // bottom-right
+  };
+
+  const sensorValues = {};
+
+  try {
+    for await (const { values, tableMeta } of queryApi.iterateRows(fluxQuery)) {
+      const row = tableMeta.toObject(values);
+      const sid = row.sensor_id;
+      const decibel = Math.min(row._value, 3.5);
+
+      if (Object.values(sensorMapping).includes(sid)) {
+        // Save decibel by sensor key (d1–d4)
+        const key = Object.entries(sensorMapping).find(([_, val]) => val === sid)?.[0];
+        if (key) {
+          sensorValues[key] = decibel;
+        }
+      }
+    }
+
+    // Check all 4 sensors are present
+    if (Object.keys(sensorValues).length !== 4) {
+      return res.status(400).json({ error: "Not all 4 required sensors present in data." });
+    }
+
+    // Generate 10x10 array
+    const grid = [];
+    for (let row = 0; row < 10; row++) {
+      const y = row / 9; // 0 to 1
+      const rowData = [];
+      for (let col = 0; col < 10; col++) {
+        const x = col / 9; // 0 to 1
+        const V = 
+          sensorValues.d1 * (1 - x) * (1 - y) +
+          sensorValues.d2 * x * (1 - y) +
+          sensorValues.d3 * (1 - x) * y +
+          sensorValues.d4 * x * y;
+        rowData.push(Number(V.toFixed(2)));
+      }
+      grid.push(rowData);
+    }
+
+    res.json({ heatmap: grid });
+
+  } catch (err) {
+    console.error('❌ Query failed:', err);
+    res.status(500).send('Query failed');
+  }
+});
+
+
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`API listening on port ${PORT}`);
 });
