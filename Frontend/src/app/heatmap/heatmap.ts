@@ -1,56 +1,61 @@
-import { Component } from '@angular/core';
+import { AfterViewInit, Component, Input, OnChanges, SimpleChanges } from '@angular/core';
+import { Sensor } from '../sensor.service';
 import Plotly from 'plotly.js-dist-min';
 
 @Component({
   selector: 'app-heatmap',
+  standalone: true,
   imports: [],
   templateUrl: './heatmap.html',
   styleUrl: './heatmap.scss'
 })
+export class Heatmap implements AfterViewInit, OnChanges {
+  @Input() reload: boolean = false;
 
-export class Heatmap {
- ngAfterViewInit(): void {
-  const size = 10; // ← kleineres Gitter
-  const x = Array.from({ length: size }, (_, i) => i);
-  const y = Array.from({ length: size }, (_, i) => i);
-  const z: number[][] = [];
+  constructor(private sensor: Sensor) {}
 
-  for (let i = 0; i < size; i++) {
-    const row = [];
-    for (let j = 0; j < size; j++) {
-      // Skaliertes Beispiel: Hügel näher anpassen wegen kleinerem Raster
-      const value =
-        Math.exp(-((i - 3) ** 2 + (j - 3) ** 2) / 4) +   // kleinerer Hügel
-        Math.exp(-((i - 7) ** 2 + (j - 7) ** 2) / 4);    // zweiter Hügel
-      row.push(value);
-    }
-    z.push(row);
+  ngAfterViewInit(): void {
+    this.loadHeatmap();
   }
 
-    Plotly.newPlot('plotly-heatmap', [
-      {
-        z: z,
-        x: x,
-        y: y,
-        type: 'surface',
-        colorscale: 'YlOrRd',
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['reload'] && changes['reload'].currentValue === true) {
+      this.loadHeatmap();
+    }
+  }
+
+  private loadHeatmap(): void {
+    this.sensor.getHeatmapArray().subscribe({
+      next: (res) => {
+        const z = res.heatmap;
+        const size = z.length;
+        const x = Array.from({ length: size }, (_, i) => i);
+        const y = Array.from({ length: size }, (_, i) => i);
+
+        Plotly.newPlot(
+          'plotly-heatmap',
+          [
+            {
+              z,
+              x,
+              y,
+              type: 'surface',
+              colorscale: 'YlOrRd',
+            },
+          ],
+          {
+            title: { text: '3D Heatmap' },
+            autosize: true,
+            scene: {
+              xaxis: { title: { text: 'X' } },
+              yaxis: { title: { text: 'Y' } },
+              zaxis: { title: { text: 'Z' } },
+            },
+          }
+        );
       },
-    ],
-    {
-      title: {
-        text: '3D Heatmap',
-      },
-      autosize: true,
-      scene: {
-        xaxis: {
-          title: { text: 'X' },
-        },
-        yaxis: {
-          title: { text: 'Y' },
-        },
-        zaxis: {
-          title: { text: 'Z' },
-        },
+      error: (err) => {
+        console.error('❌ Fehler beim Laden der Heatmap:', err);
       },
     });
   }

@@ -12,5 +12,5 @@
 
 <pre *ngIf="textData()">{{ textData() | json }}</pre>
 
-<app-heatmap></app-heatmap>
+<app-heatmap [reload]="reloadHeatmap()"></app-heatmap>
 

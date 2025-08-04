@@ -104,7 +104,7 @@ app.get('/api/generate', async (req, res) => {
       writeApi.writePoint(point);
     });
 
-    await writeApi.close();
+    //await writeApi.close(); // wenn kommentiert während laufzeit DB öfter beschreibbar
     console.log(`${data.length} dummy values written.`);
     res.status(200).json({ message: `${data.length} dummy values written.` });
   } catch (error) {
@@ -115,6 +115,8 @@ app.get('/api/generate', async (req, res) => {
 
 // Read latest value per sensor
 // calculate Array for heatmap
+// GET /api/getArray – Heatmap basierend auf Inverser Distanzgewichtung (IDW)
+
 app.get('/api/getArray', async (req, res) => {
   const fluxQuery = `
     from(bucket: "${bucket}")
@@ -133,8 +135,8 @@ app.get('/api/getArray', async (req, res) => {
     d4: "sensor4", // bottom-right
   };
 
-  const sensorValues = {}; // d1..d4
-  const rawSensorData = []; // vollständige Rückgabe
+  const sensorValues = {}; // { d1: x, d2: x, ... }
+  const rawSensorData = [];
 
   try {
     for await (const { values, tableMeta } of queryApi.iterateRows(fluxQuery)) {
@@ -142,7 +144,7 @@ app.get('/api/getArray', async (req, res) => {
       const sid = row.sensor_id;
       const decibel = row._value;
 
-      rawSensorData.push({ sensor_id: sid, decibel }); // alle empfangenen Werte speichern
+      rawSensorData.push({ sensor_id: sid, decibel });
 
       if (Object.values(sensorMapping).includes(sid)) {
         const key = Object.entries(sensorMapping).find(([_, val]) => val === sid)?.[0];
@@ -161,30 +163,52 @@ app.get('/api/getArray', async (req, res) => {
       });
     }
 
+    // Sensorpositionen im normierten Koordinatensystem
+    const sensorPositions = {
+      d1: { x: 0, y: 0 }, // top-left
+      d2: { x: 1, y: 0 }, // top-right
+      d3: { x: 0, y: 1 }, // bottom-left
+      d4: { x: 1, y: 1 }, // bottom-right
+    };
+
+    const power = 2; // IDW: Distanzexponent (2 = inverse quadratische Gewichtung)
     const grid = [];
+
     for (let row = 0; row < 10; row++) {
       const y = row / 9;
       const rowData = [];
+
       for (let col = 0; col < 10; col++) {
         const x = col / 9;
-        const V =
-          sensorValues.d1 * (1 - x) * (1 - y) +
-          sensorValues.d2 * x * (1 - y) +
-          sensorValues.d3 * (1 - x) * y +
-          sensorValues.d4 * x * y;
-        rowData.push(Number(V.toFixed(2)));
+
+        let numerator = 0;
+        let denominator = 0;
+
+        for (const [key, { x: sx, y: sy }] of Object.entries(sensorPositions)) {
+          const value = sensorValues[key];
+          const dx = x - sx;
+          const dy = y - sy;
+          const distance = Math.sqrt(dx * dx + dy * dy) || 0.0001; // Verhindert Division durch 0
+
+          const weight = 1 / Math.pow(distance, power);
+          numerator += value * weight;
+          denominator += weight;
+        }
+
+        const interpolatedValue = numerator / denominator;
+        rowData.push(Number(interpolatedValue.toFixed(2)));
       }
+
       grid.push(rowData);
     }
 
     res.json({ heatmap: grid });
 
   } catch (err) {
-    console.error('❌ Query failed:', err);
-    res.status(500).send('Query failed');
+    console.error("❌ Query failed:", err);
+    res.status(500).send("Query failed");
   }
 });
-
 
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`API listening on port ${PORT}`);
