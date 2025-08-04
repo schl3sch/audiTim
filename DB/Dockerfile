@@ -9,7 +9,7 @@ WORKDIR /data
 # If installed nodes have been changed 
 # package.json has to be updated with the contents of /data/package.json
 COPY package.json /data
-RUN npm install --unsafe-perm --no-update-notifier --no-fund --only=production
+RUN npm install --unsafe-perm --no-update-notifier --no-fund
 WORKDIR /usr/src/node-red 
 # If flow has been changed the exported flow has to be saved in flows.json
 COPY flows.json /data/flows.json
