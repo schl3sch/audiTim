@@ -127,22 +127,24 @@ app.get('/api/getArray', async (req, res) => {
   `;
 
   const sensorMapping = {
-    d1: "sensor_1", // top-left
-    d2: "sensor_2", // top-right
-    d3: "sensor_3", // bottom-left
-    d4: "sensor_4", // bottom-right
+    d1: "sensor1", // top-left
+    d2: "sensor2", // top-right
+    d3: "sensor3", // bottom-left
+    d4: "sensor4", // bottom-right
   };
 
-  const sensorValues = {};
+  const sensorValues = {}; // d1..d4
+  const rawSensorData = []; // vollständige Rückgabe
 
   try {
     for await (const { values, tableMeta } of queryApi.iterateRows(fluxQuery)) {
       const row = tableMeta.toObject(values);
       const sid = row.sensor_id;
-      const decibel = Math.min(row._value, 3.5);
+      const decibel = row._value;
+
+      rawSensorData.push({ sensor_id: sid, decibel }); // alle empfangenen Werte speichern
 
       if (Object.values(sensorMapping).includes(sid)) {
-        // Save decibel by sensor key (d1–d4)
         const key = Object.entries(sensorMapping).find(([_, val]) => val === sid)?.[0];
         if (key) {
           sensorValues[key] = decibel;
@@ -150,19 +152,22 @@ app.get('/api/getArray', async (req, res) => {
       }
     }
 
-    // Check all 4 sensors are present
     if (Object.keys(sensorValues).length !== 4) {
-      return res.status(400).json({ error: "Not all 4 required sensors present in data." });
+      return res.status(400).json({
+        error: "Not all 4 required sensors present in data.",
+        expectedSensors: sensorMapping,
+        receivedMapped: sensorValues,
+        receivedRaw: rawSensorData
+      });
     }
 
-    // Generate 10x10 array
     const grid = [];
     for (let row = 0; row < 10; row++) {
-      const y = row / 9; // 0 to 1
+      const y = row / 9;
       const rowData = [];
       for (let col = 0; col < 10; col++) {
-        const x = col / 9; // 0 to 1
-        const V = 
+        const x = col / 9;
+        const V =
           sensorValues.d1 * (1 - x) * (1 - y) +
           sensorValues.d2 * x * (1 - y) +
           sensorValues.d3 * (1 - x) * y +
@@ -184,3 +189,20 @@ app.get('/api/getArray', async (req, res) => {
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`API listening on port ${PORT}`);
 });
+
+// Graceful shutdown (fast AF)
+const shutdown = async () => {
+  console.log('🛑 Shutting down API service...');
+
+  try {
+    await writeApi.close();
+    console.log('✅ Influx write API closed.');
+  } catch (e) {
+    console.warn('⚠️ Error closing write API:', e.message);
+  }
+
+  process.exit(0);
+};
+
+// Handle Docker stop (SIGTERM)
+process.on('SIGTERM', shutdown);

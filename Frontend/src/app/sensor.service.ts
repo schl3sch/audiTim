@@ -20,4 +20,8 @@ export class Sensor {
   generateDummyData(): Observable<any> {
     return this.http.get(`${this.baseUrl}/generate`);
   }
+
+  getHeatmapArray(): Observable<{ heatmap: number[][] }> {
+  return this.http.get<{ heatmap: number[][] }>(`${this.baseUrl}/getArray`);
+  }
 }
