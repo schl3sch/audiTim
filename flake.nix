@@ -23,6 +23,14 @@
                 ];
 
                 shellHook = ''
+                  alias up='docker-compose up --build -d'
+                  alias down='docker-compose down'
+                  clean() {
+                    docker-compose down
+                    docker rm -f $(docker ps -aq)
+                    docker rmi -f $(docker images -q)
+                    docker volume rm $(docker volume ls -q)
+                  }
                   alias mqtt='nohup mqtt-explorer &'
                   ide() {
                     nohup arduino-ide --disable-gpu ~/Documents/GitHub/audiTim/Arduino > /dev/null 2>&1 &
