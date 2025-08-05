@@ -105,8 +105,8 @@ WCL am besten für wo in dem raum ist der Lautstärken Mittelpunkt
 IDW am besten für Hinten ist es noch lauter als vorne
 MLE viel aufwand aber könnte gut werden?
 
-Mischung aus IDW und WCL:
-    1. Virtuelle Sensoren / Quelle modellieren
+X Mischung aus IDW und WCL:
+    ( 1. Virtuelle Sensoren / Quelle modellieren )
         Füge zusätzliche Punkte in die Heatmap, die keine echten Sensoren sind, aber simulierte Quellen darstellen.
         Erstelle hypothetisch 10–20 Positionen im Raum (Mitte, Vorderreihe, Rückreihe usw.).
         Für jeden Punkt berechnest du:
