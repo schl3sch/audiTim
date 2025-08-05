@@ -13,7 +13,8 @@ Werte:
 	200 Bytes * 36.000 Frames = 7.200.000 Bytes = 7.2 MB (unkomprimiert)
 
 Optionen:
-	Option 1 -> Mittelwert aus 1s -> 3600 × 10×10 Werte = 360.000 Werte -> OK für JSON (max ~3-6 MB) ≈ 0,72 MB (Ungenauere Anzeige)
+X	Option 1 -> Mittelwert aus 1s -> 3600 × 10×10 Werte = 360.000 Werte -> OK für JSON (max ~3-6 MB) ≈ 0,72 MB (Ungenauere Anzeige)
+			 -> Mit longest possible in ms
 
 	Option 2 -> Brotli (br) oder gzip komprimieren -> wenn redundant oft auf 15-25% komprimierbar ≈ 1.8 MB
 
