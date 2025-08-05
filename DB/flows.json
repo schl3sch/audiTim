@@ -20,7 +20,7 @@
         "rap": true,
         "rh": 0,
         "inputs": 0,
-        "x": 350,
+        "x": 310,
         "y": 160,
         "wires": [
             [
@@ -34,18 +34,19 @@
         "type": "function",
         "z": "6761cd81a24d274a",
         "name": "function 1",
-        "func": "const data = msg.payload;\n\nmsg.payload = {\n    bucket: 'DB',\n    precision: 'ms',\n    token: '123456789',\n    method: 'POST',\n    data: []\n};\n\nconst baseTimestamp = Number(data.timestamp) * 1000; // convert to ms\nconst baseSequence = data.sequence;\nconst values = data.value;\n\nfor (let i = 0; i < 10; i++) {\n    const indexSensor1 = i;\n    const indexSensor2 = 10 + i;\n    const indexSensor3 = 20 + i;\n    const indexSensor4 = 30 + i;\n    const reading1 = Number(values[indexSensor1]);\n    const reading2 = Number(values[indexSensor2]);\n    const reading3 = Number(values[indexSensor3]);\n    const reading4 = Number(values[indexSensor4]);\n\n    msg.payload.data.push({\n        measurement: 'sensor_data',\n        tags: {\n            deviceId: 'gyh43'\n        },\n\n        fields: {\n            one: reading1,\n            humidity: 46,\n            vibrations: 18,\n            batteryVoltage: 3.6\n        },\n\n        timestamp: new Date(baseTimestamp + (i * 100)).toISOString(),\n    });\n}\n\nreturn msg;",
+        "func": "const data = msg.payload;\n\nmsg.payload = {\n    bucket: 'DB',\n    precision: 'ms',\n    token: '123456789',\n    method: 'POST',\n    data: []\n};\n\nconst baseTimestamp = Number(data.timestamp) * 1000; // convert to ms\nconst baseSequence = data.sequence;\nconst values = data.value;\n\nfor (let i = 0; i < 10; i++) {\n    const indexSensor1 = i;\n    const indexSensor2 = 10 + i;\n    const indexSensor3 = 20 + i;\n    const indexSensor4 = 30 + i;\n    const reading1 = Number(values[indexSensor1]);\n    const reading2 = Number(values[indexSensor2]);\n    const reading3 = Number(values[indexSensor3]);\n    const reading4 = Number(values[indexSensor4]);\n\n    msg.payload.data.push({\n        measurement: 'sensor_data',\n        tags: {\n            deviceId: 'gyh43'\n        },\n\n        fields: {\n            one: reading1,\n            two: reading2,\n            three: reading3,\n            four: reading4\n        },\n\n        timestamp: baseTimestamp + (i * 100),\n    });\n}\n\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 520,
+        "x": 480,
         "y": 200,
         "wires": [
             [
-                "7701405c8a7ed7d9"
+                "7701405c8a7ed7d9",
+                "257fd1e076dbb753"
             ]
         ]
     },
@@ -62,7 +63,7 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 690,
+        "x": 650,
         "y": 240,
         "wires": []
     },
@@ -78,7 +79,7 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 310,
+        "x": 270,
         "y": 240,
         "wires": [
             [
@@ -119,39 +120,40 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 700,
+        "x": 660,
         "y": 280,
         "wires": []
     },
     {
-        "id": "6aab50308c31be36",
-        "type": "Stackhero-InfluxDB-v2-write",
-        "z": "6761cd81a24d274a",
-        "server": "7aa44e40ceca8f10",
-        "name": "InfluxDB",
-        "x": 680,
-        "y": 200,
-        "wires": [
-            [
-                "99af8d7c4e4d81ad"
-            ]
-        ]
-    },
-    {
-        "id": "99af8d7c4e4d81ad",
+        "id": "af428bb866f14fb8",
         "type": "debug",
         "z": "6761cd81a24d274a",
-        "name": "debug 1",
+        "name": "InfluxDebug",
         "active": true,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
-        "complete": "false",
+        "complete": "payload",
+        "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 680,
-        "y": 100,
+        "x": 650,
+        "y": 320,
         "wires": []
+    },
+    {
+        "id": "257fd1e076dbb753",
+        "type": "Stackhero-InfluxDB-v2-write",
+        "z": "6761cd81a24d274a",
+        "server": "ebd9cdaa089e58f8",
+        "name": "InfluxDB",
+        "x": 640,
+        "y": 200,
+        "wires": [
+            [
+                "af428bb866f14fb8"
+            ]
+        ]
     },
     {
         "id": "18d3dd12ac8f58c2",
@@ -185,10 +187,10 @@
         "sessionExpiry": ""
     },
     {
-        "id": "7aa44e40ceca8f10",
+        "id": "ebd9cdaa089e58f8",
         "type": "Stackhero-InfluxDB-v2-Server",
-        "name": "AudiTimInflux",
-        "host": "localhost",
+        "name": "AudiTim Influx",
+        "host": "influxdb",
         "port": "8086",
         "tls": false
     }
