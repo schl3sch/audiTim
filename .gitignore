@@ -26,6 +26,7 @@
 # --- DB ---
 /DB/node_modules/
 /DB/package-lock.json
+/DB/temp.txt
 
 # --- Documentation ---
 /Documentation/ProjektSe/dokumentation.lot

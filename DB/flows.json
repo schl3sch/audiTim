@@ -20,7 +20,7 @@
         "rap": true,
         "rh": 0,
         "inputs": 0,
-        "x": 390,
+        "x": 350,
         "y": 160,
         "wires": [
             [
@@ -34,14 +34,14 @@
         "type": "function",
         "z": "6761cd81a24d274a",
         "name": "function 1",
-        "func": "const data = msg.payload;\n\nconst baseTimestamp = Number(data.timestamp) * 1000; // convert to ms\nconst baseSequence = data.sequence;\nconst values = data.value;\n\nconst result = [];\n\nfor (let sensor = 0; sensor < 4; sensor++) {\n    for (let i = 0; i < 10; i++) {\n        const index = (sensor * 10) + i;\n        const reading = Number(values[index]);\n\n        result.push({\n            payload: {\n                measurement: \"sensor_data\",\n                value: reading,\n                timestamp: new Date(baseTimestamp + (i * 100)).toISOString(),\n                sensor_id: `sensor_${ sensor + 1}`\n            }\n        });\n    }\n}\n\nreturn [result];\n",
+        "func": "const data = msg.payload;\n\nmsg.payload = {\n    bucket: 'DB',\n    precision: 'ms',\n    token: '123456789',\n    method: 'POST',\n    data: []\n};\n\nconst baseTimestamp = Number(data.timestamp) * 1000; // convert to ms\nconst baseSequence = data.sequence;\nconst values = data.value;\n\nfor (let i = 0; i < 10; i++) {\n    const indexSensor1 = i;\n    const indexSensor2 = 10 + i;\n    const indexSensor3 = 20 + i;\n    const indexSensor4 = 30 + i;\n    const reading1 = Number(values[indexSensor1]);\n    const reading2 = Number(values[indexSensor2]);\n    const reading3 = Number(values[indexSensor3]);\n    const reading4 = Number(values[indexSensor4]);\n\n    msg.payload.data.push({\n        measurement: 'sensor_data',\n        tags: {\n            deviceId: 'gyh43'\n        },\n\n        fields: {\n            one: reading1,\n            humidity: 46,\n            vibrations: 18,\n            batteryVoltage: 3.6\n        },\n\n        timestamp: new Date(baseTimestamp + (i * 100)).toISOString(),\n    });\n}\n\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 560,
+        "x": 520,
         "y": 200,
         "wires": [
             [
@@ -54,7 +54,7 @@
         "type": "debug",
         "z": "6761cd81a24d274a",
         "name": "Influx Mirror",
-        "active": true,
+        "active": false,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
@@ -63,7 +63,7 @@
         "statusVal": "",
         "statusType": "auto",
         "x": 690,
-        "y": 200,
+        "y": 240,
         "wires": []
     },
     {
@@ -78,7 +78,7 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 350,
+        "x": 310,
         "y": 240,
         "wires": [
             [
@@ -86,40 +86,6 @@
                 "bf6a215f9586bb05"
             ]
         ]
-    },
-    {
-        "id": "e84569a561387759",
-        "type": "catch",
-        "z": "6761cd81a24d274a",
-        "name": "",
-        "scope": [
-            "6eb1bac4457d8171"
-        ],
-        "uncaught": false,
-        "x": 390,
-        "y": 320,
-        "wires": [
-            [
-                "15dc1979fbd78224"
-            ]
-        ]
-    },
-    {
-        "id": "15dc1979fbd78224",
-        "type": "debug",
-        "z": "6761cd81a24d274a",
-        "name": "MQTT Err",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "payload",
-        "targetType": "msg",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 500,
-        "y": 320,
-        "wires": []
     },
     {
         "id": "8e065df14c632f75",
@@ -158,6 +124,36 @@
         "wires": []
     },
     {
+        "id": "6aab50308c31be36",
+        "type": "Stackhero-InfluxDB-v2-write",
+        "z": "6761cd81a24d274a",
+        "server": "7aa44e40ceca8f10",
+        "name": "InfluxDB",
+        "x": 680,
+        "y": 200,
+        "wires": [
+            [
+                "99af8d7c4e4d81ad"
+            ]
+        ]
+    },
+    {
+        "id": "99af8d7c4e4d81ad",
+        "type": "debug",
+        "z": "6761cd81a24d274a",
+        "name": "debug 1",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 680,
+        "y": 100,
+        "wires": []
+    },
+    {
         "id": "18d3dd12ac8f58c2",
         "type": "mqtt-broker",
         "name": "HänischMqtt",
@@ -187,5 +183,13 @@
         "willMsg": {},
         "userProps": "",
         "sessionExpiry": ""
+    },
+    {
+        "id": "7aa44e40ceca8f10",
+        "type": "Stackhero-InfluxDB-v2-Server",
+        "name": "AudiTimInflux",
+        "host": "localhost",
+        "port": "8086",
+        "tls": false
     }
 ]
