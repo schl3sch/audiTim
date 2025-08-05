@@ -78,7 +78,7 @@ Maximum Likelihood Estimation (MLE):
     Dann möglich:
         Modell: Zwei Quellen (x₁, y₁, L₁) und (x₂, y₂, L₂)
         sᵢ ≈ L₁ - 20 log10(dᵢ₁) + L₂ - 20 log10(dᵢ₂)
-        
+
 Weighted Centroid Localization (WCL):
     Jeder Sensorwert wirkt wie eine Gravitationskraft, die die Quelle „zu sich zieht“.
     Du rechnest daraus einen gewichteten Mittelpunkt, der der Quelle am nächsten kommt.
@@ -104,3 +104,15 @@ Machine Learning wsl beste wenn man es gut macht (hoher aufwand)
 WCL am besten für wo in dem raum ist der Lautstärken Mittelpunkt
 IDW am besten für Hinten ist es noch lauter als vorne
 MLE viel aufwand aber könnte gut werden?
+
+Mischung aus IDW und WCL:
+    1. Virtuelle Sensoren / Quelle modellieren
+        Füge zusätzliche Punkte in die Heatmap, die keine echten Sensoren sind, aber simulierte Quellen darstellen.
+        Erstelle hypothetisch 10–20 Positionen im Raum (Mitte, Vorderreihe, Rückreihe usw.).
+        Für jeden Punkt berechnest du:
+            Wie wahrscheinlich ist es, dass von hier der Schall kam, basierend auf der Distanz zu den Sensoren und deren Lautstärke.
+        Dann: Summe über alle hypothetischen Quellen → erzeugt deinen Heatmap-Wert.
+
+    2. Kombiniere mit WCL-Light
+        Berechne zusätzlich zum IDW die "wahrscheinlichste Quelle" mit WCL (also den gewichteten Mittelpunkt):
+        Dann setz einen Peak an dieser Stelle und blende IDW drum herum weich ein (z. B. additiv mit einem Gauss-Blob oder Gradient).
