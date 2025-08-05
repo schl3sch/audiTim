@@ -1,33 +1,35 @@
 Problema:
-Wenn für jede sliderposi eine api dann:
-wenn jede Zehntelsekunde ein datenpaket -> 36.000 Zeitpunkte pro Sensor -> 144.000 Werte pro Stunde 
+	Wenn für jede sliderposi eine api dann:
+	wenn jede Zehntelsekunde ein datenpaket -> 36.000 Zeitpunkte pro Sensor -> 144.000 Werte pro Stunde 
 					-> 36.000 x 10 x 10 für Array -> 3,6 Mio
+
 Werte:
-Heatmap: 10x10 Werte (also 100 Felder pro Heatmap)
-Wert-Typ: Float16 (2 Byte pro Wert)
-Frequenz: 10 Hz (alle 100 ms ein neuer Frame)
-Dauer: z.B. 1 Stunde = 3600 Sekunden = 36.000 Frames
+	Heatmap: 10x10 Werte (also 100 Felder pro Heatmap)
+	Wert-Typ: Float16 (2 Byte pro Wert)
+	Frequenz: 10 Hz (alle 100 ms ein neuer Frame)
+	Dauer: z.B. 1 Stunde = 3600 Sekunden = 36.000 Frames
 
-100 Werte/Frame * 2 Bytes/Wert = 200 Bytes/Frame
-200 Bytes * 36.000 Frames = 7.200.000 Bytes = 7.2 MB (unkomprimiert)
+	100 Werte/Frame * 2 Bytes/Wert = 200 Bytes/Frame
+	200 Bytes * 36.000 Frames = 7.200.000 Bytes = 7.2 MB (unkomprimiert)
 
-Option 1 -> Mittelwert aus 1s -> 3600 × 10×10 Werte = 360.000 Werte -> OK für JSON (max ~3-6 MB) ≈ 0,72 MB (Ungenauere Anzeige)
+Optionen:
+	Option 1 -> Mittelwert aus 1s -> 3600 × 10×10 Werte = 360.000 Werte -> OK für JSON (max ~3-6 MB) ≈ 0,72 MB (Ungenauere Anzeige)
 
-Option 2 -> Brotli (br) oder gzip komprimieren -> wenn redundant oft auf 15-25% komprimierbar ≈ 1.8 MB
+	Option 2 -> Brotli (br) oder gzip komprimieren -> wenn redundant oft auf 15-25% komprimierbar ≈ 1.8 MB
 
-Option 3 -> Binär-Format -> MessagePack, FlatBuffers, Protobuf -> schneller zu dekodieren, weniger Overhead -> reduziert auf ca ~60–70 % ≈ 5.0 MB
+	Option 3 -> Binär-Format -> MessagePack, FlatBuffers, Protobuf -> schneller zu dekodieren, weniger Overhead -> reduziert auf ca ~60–70 % ≈ 5.0 MB
 
-Option 4 -> Binär-Fromat into Komprimieren -> ca 15% ≈ 1.2 MB
+	Option 4 -> Binär-Fromat into Komprimieren -> ca 15% ≈ 1.2 MB
 
-Option 5 -> Delta-Encoding (nur die Differenz zum vorherigen Frame) -> Annahme jeder Ditte wert ändert sich -> 33 Änderungen * 3 Byte = 99 Bytes/Frame
-	 -> 99 Bytes * 36.000 Frames = 3.564.000 Bytes ≈ 3.4 MB 
+	Option 5 -> Delta-Encoding (nur die Differenz zum vorherigen Frame) -> Annahme jeder Ditte wert ändert sich -> 33 Änderungen * 3 Byte = 99 Bytes/Frame
+		-> 99 Bytes * 36.000 Frames = 3.564.000 Bytes ≈ 3.4 MB 
 
-Option 6 -> Delta-Encoding into Komprimieren -> Delta-Daten sind weniger repetitiv -> 30%  von 3.4 MB  ≈  1.0 – 1.2 MB
+	Option 6 -> Delta-Encoding into Komprimieren -> Delta-Daten sind weniger repetitiv -> 30%  von 3.4 MB  ≈  1.0 – 1.2 MB
 
-Option 7 -> Pre-Exportierte Dateien -> Backend speichert pro Stunde eine Datei (heatmap-2025-08-04T12.msgpack.br) -> Frontend lädt Datei bei Zeitauswahl
-	 -> Cachebarkeit im Browser -> keine Rechenzeit ≈ 7.2 MB
+	Option 7 -> Pre-Exportierte Dateien -> Backend speichert pro Stunde eine Datei (heatmap-2025-08-04T12.msgpack.br) -> Frontend lädt Datei bei Zeitauswahl
+		-> Cachebarkeit im Browser -> keine Rechenzeit ≈ 7.2 MB
 
-Option 8 -> Pre-Exportierte Dateien mit Komprimieren ≈  1.2 MB/Stunde ca. 30MB auf 24h -> machbar mit modernen Webtechnologien
+	Option 8 -> Pre-Exportierte Dateien mit Komprimieren ≈  1.2 MB/Stunde ca. 30MB auf 24h -> machbar mit modernen Webtechnologien
 
 Pre-Exportierte Dateien:
 	Scheduler/Trigger ruft Backend-Task auf (POST /api/export?date=2025-07-21)

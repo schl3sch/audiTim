@@ -171,7 +171,7 @@ app.get('/api/getArray', async (req, res) => {
       d4: { x: 1, y: 1 }, // bottom-right
     };
 
-    const power = 4; // IDW: Distanzexponent (2 = inverse quadratische Gewichtung)
+    const power = 2; // IDW: Distanzexponent (2 = inverse quadratische Gewichtung)
     const grid = [];
 
     for (let row = 0; row < 10; row++) {
