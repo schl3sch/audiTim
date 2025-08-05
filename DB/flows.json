@@ -34,7 +34,7 @@
         "type": "function",
         "z": "6761cd81a24d274a",
         "name": "function 1",
-        "func": "const data = msg.payload;\n\nmsg.payload = {\n    bucket: 'DB',\n    precision: 'ms',\n    token: '123456789',\n    method: 'POST',\n    data: []\n};\n\nconst baseTimestamp = Number(data.timestamp) * 1000; // convert to ms\nconst baseSequence = data.sequence;\nconst values = data.value;\n\nfor (let i = 0; i < 10; i++) {\n    const indexSensor1 = i;\n    const indexSensor2 = 10 + i;\n    const indexSensor3 = 20 + i;\n    const indexSensor4 = 30 + i;\n    const reading1 = Number(values[indexSensor1]);\n    const reading2 = Number(values[indexSensor2]);\n    const reading3 = Number(values[indexSensor3]);\n    const reading4 = Number(values[indexSensor4]);\n\n    msg.payload.data.push({\n        measurement: 'sensor_data',\n        tags: {\n            deviceId: 'gyh43'\n        },\n\n        fields: {\n            one: reading1,\n            two: reading2,\n            three: reading3,\n            four: reading4\n        },\n\n        timestamp: baseTimestamp + (i * 100),\n    });\n}\n\nreturn msg;",
+        "func": "const data = msg.payload;\n\nmsg.payload = {\n    bucket: 'DB',\n    precision: 'ms',\n    token: '123456789',\n    method: 'POST',\n    data: []\n};\n\nconst baseTimestamp = Number(data.timestamp) * 1000; // convert to ms\nconst baseSequence = data.sequence;\nconst values = data.value;\n\nfor (let i = 0; i < 10; i++) {\n    const indexSensor1 = i;\n    const indexSensor2 = 10 + i;\n    const indexSensor3 = 20 + i;\n    const indexSensor4 = 30 + i;\n    const reading1 = Number(values[indexSensor1]);\n    const reading2 = Number(values[indexSensor2]);\n    const reading3 = Number(values[indexSensor3]);\n    const reading4 = Number(values[indexSensor4]);\n\n    msg.payload.data.push({\n        measurement: 'sensor_data',\n        fields: {\n            sensor_1: reading1,\n            sensor_2: reading2,\n            sensor_3: reading3,\n            sensor_4: reading4\n        },\n\n        timestamp: baseTimestamp + (i * 100),\n    });\n}\n\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -102,9 +102,7 @@
         "x": 100,
         "y": 160,
         "wires": [
-            [
-                "e86b8df27f37b702"
-            ]
+            []
         ]
     },
     {
@@ -129,7 +127,7 @@
         "type": "debug",
         "z": "6761cd81a24d274a",
         "name": "InfluxDebug",
-        "active": true,
+        "active": false,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
