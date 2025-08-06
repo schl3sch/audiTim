@@ -33,7 +33,7 @@
                   }
                   alias mqtt='nohup mqtt-explorer &'
                   ide() {
-                    nohup arduino-ide --disable-gpu ~/Documents/GitHub/audiTim/Arduino > /dev/null 2>&1 &
+                    nohup arduino-ide --disable-gpu ~/Documents/GitHub/audiTim/Arduino/edgeDevice > /dev/null 2>&1 &
                     disown
                   }
                   arduino-cli lib list
