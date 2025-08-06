@@ -28,18 +28,10 @@ int targetChannel = 1;
 // ESP-Now
 typedef struct struct_message {
   uint16_t audio; // 0-4095 Mic volume
-  uint16_t error; // Error = Number of failed messages since last success
 } struct_message; // Typedef
 struct_message myData; // Create a struct_message called myData
-// Hilfs-Struct für Kanal-Info
-typedef struct {
-  uint8_t channel;
-} channel_msg_t;
 
-uint16_t failedTransmissionCounter = 0;
-unsigned long failed = 0;
-unsigned long succes = 0;
-
+unsigned long failedTransmissionCounter  = 0;
 
 void setup() {
   Serial.begin(115200);
@@ -56,9 +48,10 @@ void setup() {
   } 
   // Scan for WiFi networks
   int n = WiFi.scanNetworks();
+  delay(100);  // Taktischer Delay
   for (int i = 0; i < n; i++) {
-    if (WiFi.SSID(i) == "AI401") {
-      targetChannel = WiFi.channel(i);// Set channel to the same as AI401
+    if (WiFi.SSID(i) == "AudiTim") {
+      targetChannel = WiFi.channel(i);// Set channel to the same as Edge
       break;
     }
   }
@@ -68,13 +61,9 @@ void setup() {
   esp_wifi_set_channel(targetChannel, WIFI_SECOND_CHAN_NONE);
   esp_wifi_set_promiscuous(false);
   
-  selectMac();
-  if(myMac[5] != 0){
-   esp_wifi_set_mac(WIFI_IF_STA, myMac);
-  }
+  setMac();
   
   esp_now_init();
-  esp_now_register_recv_cb(onReceive);  // Activate receiving messages from edge
 
   esp_now_peer_info_t peerInfo = {};
   memcpy(peerInfo.peer_addr, edgeDeviceMac, 6);
@@ -97,19 +86,22 @@ void loop() {
 
   // Prepare ESP-NOW message
   myData.audio = peakToPeak;
-  myData.error = failedTransmissionCounter;
-
   esp_now_send(edgeDeviceMac, (uint8_t *) &myData, sizeof(myData));
 
   // Non-blocking wait
   while((startProbeMillis + 100) > millis()){
     ; // Just chill here for the duration of 100ms
   }
+
+  if(failedTransmissionCounter >= 10){
+    findNewChannel();
+  }
+
   //inmpLoop();
 }
 
 // This function recognizes on wich ESP the code is being executed and changes MAC/Identifier accordingly
-void selectMac(){
+void setMac(){
   uint8_t originalMac[6];
   WiFi.macAddress(originalMac);
   switch(originalMac[5]){
@@ -123,44 +115,48 @@ void selectMac(){
       myMac[5] = 0x04;
       break;      
   }
+
+  if(myMac[5] != 0){
+    esp_wifi_set_mac(WIFI_IF_STA, myMac); // Change local MAC-Adress
+  }
 }
 
 // Callback espNOW when message has been sent
-void onSent(const wifi_tx_info_t *tx_info, esp_now_send_status_t status) {
-  /*if(status == ESP_NOW_SEND_SUCCESS && failedTransmissionCounter){
-    succes++;
+void onSent(const uint8_t *mac_addr, esp_now_send_status_t status) {
+  if(status == ESP_NOW_SEND_SUCCESS){
+    failedTransmissionCounter = 0;
   }
   else if(status != ESP_NOW_SEND_SUCCESS){
-    failed++;
-  }*/
+    failedTransmissionCounter++;
+  }
 }
 
-void onReceive(const esp_now_recv_info_t *recv_info, const uint8_t *incomingData, int len) {
-  if (len == sizeof(channel_msg_t)) {
-    channel_msg_t msg;
-    memcpy(&msg, incomingData, sizeof(channel_msg_t));
-    Serial.printf("OnReceive aufgerufen!")
-    Serial.printf("Empfange neuen Channel: %u\n", msg.channel);
-    // Aktuellen Channel setzen
-    esp_wifi_set_promiscuous(true);
-    esp_wifi_set_channel(msg.channel, WIFI_SECOND_CHAN_NONE);
-    esp_wifi_set_promiscuous(false);
-
-    // ESP-Now neu starten, da Kanal sich geändert hat
-    esp_now_deinit();
-    esp_now_init();
-
-    // Peer wieder hinzufügen
-    esp_now_peer_info_t peerInfo = {};
-    memcpy(peerInfo.peer_addr, edgeDeviceMac, 6);
-    peerInfo.channel = 0;
-    peerInfo.encrypt = false;
-    esp_now_add_peer(&peerInfo);
-
-    // Callback erneut registrieren
-    esp_now_register_send_cb(onSent);
-    esp_now_register_recv_cb(onReceive);
-
-    Serial.println("Channel-Wechsel abgeschlossen.");
+void findNewChannel(){
+  // Scan for WiFi networks
+  int n = WiFi.scanNetworks();
+  delay(100);  // Taktischer Delay
+  for (int i = 0; i < n; i++) {
+    if (WiFi.SSID(i) == "AudiTim") {
+      targetChannel = WiFi.channel(i);// Set channel to the same as Edge
+      break;
+    }
   }
+  // Aktuellen Channel setzen
+  esp_wifi_set_promiscuous(true);
+  esp_wifi_set_channel(targetChannel, WIFI_SECOND_CHAN_NONE);
+  esp_wifi_set_promiscuous(false);
+
+  // ESP-Now neu starten, da Kanal sich geändert hat
+  esp_now_deinit();
+  esp_now_init();
+
+  // Peer wieder hinzufügen
+  esp_now_peer_info_t peerInfo = {};
+  memcpy(peerInfo.peer_addr, edgeDeviceMac, 6);
+  peerInfo.channel = 0;
+  peerInfo.encrypt = false;
+  esp_now_add_peer(&peerInfo);
+
+  // Callback erneut registrieren
+  esp_now_register_send_cb(onSent);
 }

@@ -10,6 +10,7 @@
 #include <WiFi.h> // Is installed automatically. Don't install additional libs
 #include <ArduinoMqttClient.h> // Has to be installed manually
 #include <esp_now.h>
+#include <esp_wifi.h>
 #include "../arduino_secrets.h" // Local file with secrets
 #include "../probeMax.h" // Unified max4466 probe code
 //#include "../inmp441.h" // I2S Microphone
@@ -30,12 +31,6 @@
 // Liste der Sender-MACs (ESP-2, ESP-3, ESP-4):
 uint8_t senderMacDefault[] = {0xDE,0xAD,0xC0,0xDE,0x00,0x00};
 
-// Hilfs-Struct für Kanal-Info
-typedef struct {
-  uint8_t channel; // 1–13
-} channel_msg_t;
-
-
 const char ssid[] = SECRET_SSID;    // your network SSID
 const char pass[] = SECRET_PASS;    // your network password
 
@@ -55,11 +50,8 @@ unsigned long  count = 0;
 uint8_t empfaengerMac[] = {0xDE, 0x8C, 0x49, 0x69, 0xD5, 0x74};
 typedef struct struct_message {
   uint16_t audio; // 0-4095 Mic volume
-  uint16_t error; // Error = Number of failed messages
 } struct_message; // Typedef
 uint16_t failedTransmissionCounter = 0;
-uint8_t channelInfo = 0;  
-int targetChannel = 1; 
 
 // Collect Data
 uint16_t collectEsp[4][10];
@@ -83,18 +75,10 @@ void setup() {
 
   // Connect to MQTT
   connectMqtt();
-
-  // Find target channel
-  findTargetChannel();
-  channelInfo = targetChannel; 
   
   // ESP-Now
   esp_now_init();
   esp_now_register_recv_cb(onReceive);
-
-  SenderAsPeers(); // Add all senders as peers
-  sendCurrentChannelToSender();
-  // CHANNEL ÄNDERUNG NOCH NICHT IMPLEMENTIERT
 }
 
 
@@ -140,29 +124,7 @@ void onReceive(const esp_now_recv_info* info, const uint8_t* data, int len) {
 
   Serial.print("Ref:4095,");
   Serial.printf("%u-Data:%u,", identifier, incomingData.audio); // %u for unsigned integer
-  Serial.printf("%u-Error:%u\n", identifier, incomingData.error);
   collectEsp[identifier - 1][countEspTicks] = incomingData.audio;
-}
-
-void SenderAsPeers(){
-  for (uint8_t i = 2; i < 5; ++i) {
-    esp_now_peer_info_t peerInfo = {};
-    memcpy(peerInfo.peer_addr, senderMacDefault[5]=i, 6);
-    peerInfo.channel = 0;             // 0 = aktueller Kanal
-    peerInfo.encrypt = false;
-    esp_err_t err = esp_now_add_peer(&peerInfo);
-    Serial.printf("Peer %u add: %s\n", i+1, err == ESP_OK ? "OK" : "FAIL");
-  }
-}
-
-void sendCurrentChannelToSender() {
-  channel_msg_t msg;
-  msg.channel = channelInfo;
-
-  for (uint8_t i = 2; i < 5; ++i) {
-    esp_err_t res = esp_now_send(senderMacDefault[5]=i, (uint8_t*)&msg, sizeof(msg));
-    Serial.printf("ESP-NOW sending to MAC-Ending: ", i ,
-     "\n");
 }
 
 void sendMqtt(int count){
@@ -194,16 +156,38 @@ void sendMqtt(int count){
   doc.clear();
 }
 
-void findTargetChannel() {
-  WiFi.mode(WIFI_STA); // Muss vor dem Scan gesetzt sein
-  int n = WiFi.scanNetworks();
-  for (int i = 0; i < n; i++) {
-    if (WiFi.SSID(i) == "AI401") {
-      targetChannel = WiFi.channel(i);
-      Serial.printf("SSID AI401 gefunden auf Kanal %u\n", targetChannel);
-      break;
-    }
+void connectWPA2(){
+  WiFi.softAPdisconnect(true);  // Shutdown AP
+  WiFi.disconnect(true); // Disconnect AI401 before setup
+
+  // Start connection
+  WiFi.mode(WIFI_AP_STA); // Mandatory for ESP-Now + Local AP
+  WiFi.begin(ssid, pass);
+  
+  while (WiFi.status() != WL_CONNECTED) {
+    // failed, retry
+    Serial.print(".");
+    delay(500);
   }
+
+  wifi_ap_record_t apInfo;
+  esp_wifi_sta_get_ap_info(&apInfo);
+  int staChannel = apInfo.primary; // Channel of AI401 Network
+
+  WiFi.softAP("AudiTim" , "auditim", staChannel);
+  Serial.println("network setup");  
+}
+
+void connectMqtt(){
+  mqttClient.setUsernamePassword(MQTT_USER, MQTT_PASS);
+  Serial.print("Attempting MQTT connection");
+  while (!mqttClient.connect(broker, port)) {
+    Serial.print("MQTT connection failed! Error code = ");
+    Serial.println(mqttClient.connectError());
+    Serial.println("Trying again in 1 second");
+    delay(1000);
+  }
+  Serial.println("You're connected to the MQTT broker!");
 }
 
 /*void connectToStudentenWlan(){
@@ -227,29 +211,3 @@ void findTargetChannel() {
   }
   Serial.println("You're connected to the network");
 }*/
-
-void connectWPA2(){
-  WiFi.disconnect(true); // Disconnect before setup
-  WiFi.mode(WIFI_STA); // Mandatory for ESP-Now
-  // Start connection
-  WiFi.begin(ssid, pass);
-  
-  while (WiFi.status() != WL_CONNECTED) {
-    // failed, retry
-    Serial.print(".");
-    delay(500);
-  }
-  Serial.println("You're connected to the network");
-}
-
-void connectMqtt(){
-  mqttClient.setUsernamePassword(MQTT_USER, MQTT_PASS);
-  Serial.print("Attempting MQTT connection");
-  while (!mqttClient.connect(broker, port)) {
-    Serial.print("MQTT connection failed! Error code = ");
-    Serial.println(mqttClient.connectError());
-    Serial.println("Trying again in 1 second");
-    delay(1000);
-  }
-  Serial.println("You're connected to the MQTT broker!");
-}
