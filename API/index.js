@@ -33,73 +33,17 @@ queryApi.queryRows(`buckets()`, {
   },
 });
 
-// Read all sensor values
-app.get('/api/allsensors', async (req, res) => {
-  const fluxQuery = `
-    from(bucket: "${bucket}")
-      |> range(start: 0)
-      |> filter(fn: (r) => r._measurement == "sensor_data")
-      |> filter(fn: (r) => r._field == "decibel")
-      |> group(columns: ["sensor_id"])
-      |> sort(columns: ["_time"], desc: false)
-  `;
-
-  const result = {};
-  try {
-    for await (const { values, tableMeta } of queryApi.iterateRows(fluxQuery)) {
-      const row = tableMeta.toObject(values);
-      const sid = row.sensor_id;
-      const decibel = Math.min(row._value, 3.5);
-      const time = row._time;
-      if (!result[sid]) result[sid] = [];
-      result[sid].push({ time, decibel });
-    }
-
-    res.json(result);
-  } catch (err) {
-    console.error('❌ Query failed:', err);
-    res.status(500).send('Query failed');
-  }
-});
-
-// Read latest sensor values (5 per sensor)
-app.get('/api/newsensors', async (req, res) => {
-  const fluxQuery = `
-    from(bucket: "${bucket}")
-      |> range(start: -30d)
-      |> filter(fn: (r) => r._measurement == "sensor_data")
-      |> filter(fn: (r) => r._field == "decibel")
-      |> group(columns: ["sensor_id"])
-      |> sort(columns: ["_time"], desc: true)
-      |> limit(n: 5)
-  `;
-
-  const result = {};
-  try {
-    for await (const { values, tableMeta } of queryApi.iterateRows(fluxQuery)) {
-      const row = tableMeta.toObject(values);
-      const sid = row.sensor_id;
-      const decibel = Math.min(row._value, 3.5);
-      const time = row._time;
-      if (!result[sid]) result[sid] = [];
-      result[sid].push({ time, decibel });
-    }
-    res.json(result);
-  } catch (err) {
-    console.error('❌ Query failed:', err);
-    res.status(500).send('Query failed');
-  }
-});
-
 // Write dummy data
 app.get('/api/generate', async (req, res) => {
   try {
     const data = JSON.parse(fs.readFileSync('./mock-data/dummyData.json', 'utf8'));
 
-    data.forEach(({ sensor_id, decibel, timestamp }) => {
+    data.forEach(({ timestamp, sensor_1, sensor_2, sensor_3, sensor_4 }) => {
       const point = new Point('sensor_data')
-        .tag('sensor_id', sensor_id)
-        .floatField('decibel', decibel)
+        .floatField('sensor_1', sensor_1)
+        .floatField('sensor_2', sensor_2)
+        .floatField('sensor_3', sensor_3)
+        .floatField('sensor_4', sensor_4)
         .timestamp(new Date(timestamp));
       writeApi.writePoint(point);
     });
@@ -113,49 +57,50 @@ app.get('/api/generate', async (req, res) => {
   }
 });
 
-// Read latest value per sensor
-// calculate Array for heatmap
+// Heatmap basierend auf sensor_1–sensor_4
 app.get('/api/getArray', async (req, res) => {
   const fluxQuery = `
     from(bucket: "${bucket}")
-      |> range(start: -30d)
+      |> range(start: -5m)
       |> filter(fn: (r) => r._measurement == "sensor_data")
-      |> filter(fn: (r) => r._field == "decibel")
-      |> group(columns: ["sensor_id"])
+      |> filter(fn: (r) =>
+        r._field == "sensor_1" or
+        r._field == "sensor_2" or
+        r._field == "sensor_3" or
+        r._field == "sensor_4"
+      )
       |> sort(columns: ["_time"], desc: true)
-      |> first()
+      |> limit(n:1)
   `;
 
-  const sensorMapping = {
-    d1: "sensor1", // top-left
-    d2: "sensor2", // top-right
-    d3: "sensor3", // bottom-left
-    d4: "sensor4", // bottom-right
+  const fieldToCorner = {
+    sensor_1: "d1", // top-left
+    sensor_2: "d2", // top-right
+    sensor_3: "d3", // bottom-left
+    sensor_4: "d4", // bottom-right
   };
 
-  const sensorValues = {}; // d1..d4
-  const rawSensorData = []; // vollständige Rückgabe
+  const sensorValues = {};
+  const rawSensorData = [];
 
   try {
     for await (const { values, tableMeta } of queryApi.iterateRows(fluxQuery)) {
       const row = tableMeta.toObject(values);
-      const sid = row.sensor_id;
-      const decibel = row._value;
+      const field = row._field;
+      const value = row._value;
 
-      rawSensorData.push({ sensor_id: sid, decibel }); // alle empfangenen Werte speichern
+      rawSensorData.push({ field, value });
 
-      if (Object.values(sensorMapping).includes(sid)) {
-        const key = Object.entries(sensorMapping).find(([_, val]) => val === sid)?.[0];
-        if (key) {
-          sensorValues[key] = decibel;
-        }
+      if (fieldToCorner[field]) {
+        const corner = fieldToCorner[field];
+        sensorValues[corner] = value;
       }
     }
 
     if (Object.keys(sensorValues).length !== 4) {
       return res.status(400).json({
-        error: "Not all 4 required sensors present in data.",
-        expectedSensors: sensorMapping,
+        error: "Not all 4 required sensor fields present in data.",
+        expectedFields: Object.keys(fieldToCorner),
         receivedMapped: sensorValues,
         receivedRaw: rawSensorData
       });
@@ -185,12 +130,11 @@ app.get('/api/getArray', async (req, res) => {
   }
 });
 
-
+// API Start
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`API listening on port ${PORT}`);
 });
 
-// Graceful shutdown (fast AF)
 const shutdown = async () => {
   console.log('🛑 Shutting down API service...');
 
@@ -204,5 +148,4 @@ const shutdown = async () => {
   process.exit(0);
 };
 
-// Handle Docker stop (SIGTERM)
 process.on('SIGTERM', shutdown);
