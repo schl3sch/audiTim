@@ -55,7 +55,7 @@ export class Heatmap implements AfterViewInit, OnChanges {
         );
       },
       error: (err) => {
-        console.error('❌ Fehler beim Laden der Heatmap:', err);
+        console.error('Fehler beim Laden der Heatmap:', err);
       },
     });
   }
