@@ -355,7 +355,6 @@ app.get('/api/getArrayWCL', async (req, res) => {
     const centroidX = weightedX / weightSum;
     const centroidY = weightedY / weightSum;
 
-    // Optional: maximale Distanz zur Skalierung
     const maxDistance = Math.sqrt(2); // Diagonale des normierten Feldes
 
     for (let row = 0; row < gridSize; row++) {
@@ -518,8 +517,6 @@ app.get('/api/getArray', async (req, res) => {
     res.status(500).send("Query failed");
   }
 });
-
-
 
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`API listening on port ${PORT}`);
