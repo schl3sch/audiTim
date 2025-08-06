@@ -28,15 +28,10 @@
 // ESP-3:         D4:8C:49:69:D5:74 -> DE:AD:C0:DE:00:03
 // ESP-4:         D4:8C:49:6A:EC:24 -> DE:AD:C0:DE:00:04
 // Liste der Sender-MACs (ESP-2, ESP-3, ESP-4):
-const uint8_t senderMacs[][6] = {
-  {0xDE,0xAD,0xC0,0xDE,0x00,0x02},  // ESP-2
-  {0xDE,0xAD,0xC0,0xDE,0x00,0x03},  // ESP-3
-  {0xDE,0xAD,0xC0,0xDE,0x00,0x04}   // ESP-4
-};
-const size_t numSenders = sizeof(senderMacs) / 6;
+uint8_t senderMacDefault[] = {0xDE,0xAD,0xC0,0xDE,0x00,0x00};
+
 // Hilfs-Struct für Kanal-Info
 typedef struct {
-  uint8_t type;    // 0x01 = Kanal-Info
   uint8_t channel; // 1–13
 } channel_msg_t;
 
@@ -150,9 +145,9 @@ void onReceive(const esp_now_recv_info* info, const uint8_t* data, int len) {
 }
 
 void SenderAsPeers(){
-  for (size_t i = 0; i < numSenders; ++i) {
+  for (uint8_t i = 2; i < 5; ++i) {
     esp_now_peer_info_t peerInfo = {};
-    memcpy(peerInfo.peer_addr, senderMacs[i], 6);
+    memcpy(peerInfo.peer_addr, senderMacDefault[5]=i, 6);
     peerInfo.channel = 0;             // 0 = aktueller Kanal
     peerInfo.encrypt = false;
     esp_err_t err = esp_now_add_peer(&peerInfo);
@@ -162,24 +157,12 @@ void SenderAsPeers(){
 
 void sendCurrentChannelToSender() {
   channel_msg_t msg;
-  msg.type    = 0x01;
   msg.channel = channelInfo;
 
-  for (size_t i = 0; i < numSenders; ++i) {
-    esp_err_t res = esp_now_send(senderMacs[i], (uint8_t*)&msg, sizeof(msg));
-    if (res != ESP_OK) {
-      Serial.printf("Kanal-Info an Sender %02X:%02X:%02X:%02X:%02X:%02X fehlgeschlagen\n",
-        senderMacs[i][0],senderMacs[i][1],senderMacs[i][2],
-        senderMacs[i][3],senderMacs[i][4],senderMacs[i][5]
-      );
-    } else {
-      Serial.printf("Kanal-Info an Sender %02X:%02X:%02X:%02X:%02X:%02X gesendet: %u\n",
-        senderMacs[i][0],senderMacs[i][1],senderMacs[i][2],
-        senderMacs[i][3],senderMacs[i][4],senderMacs[i][5],
-        channelInfo
-      );
-    }
-  }
+  for (uint8_t i = 2; i < 5; ++i) {
+    esp_err_t res = esp_now_send(senderMacDefault[5]=i, (uint8_t*)&msg, sizeof(msg));
+    Serial.printf("ESP-NOW sending to MAC-Ending: ", i ,
+     "\n");
 }
 
 void sendMqtt(int count){
