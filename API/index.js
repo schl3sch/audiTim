@@ -33,6 +33,64 @@ queryApi.queryRows(`buckets()`, {
   },
 });
 
+// Read all sensor values
+app.get('/api/allsensors', async (req, res) => {
+  const fluxQuery = `
+    from(bucket: "${bucket}")
+      |> range(start: 0)
+      |> filter(fn: (r) => r._measurement == "sensor_data")
+      |> filter(fn: (r) => r._field == "decibel")
+      |> group(columns: ["sensor_id"])
+      |> sort(columns: ["_time"], desc: false)
+  `;
+
+  const result = {};
+  try {
+    for await (const { values, tableMeta } of queryApi.iterateRows(fluxQuery)) {
+      const row = tableMeta.toObject(values);
+      const sid = row.sensor_id;
+      const decibel = Math.min(row._value, 3.5);
+      const time = row._time;
+      if (!result[sid]) result[sid] = [];
+      result[sid].push({ time, decibel });
+    }
+
+    res.json(result);
+  } catch (err) {
+    console.error('❌ Query failed:', err);
+    res.status(500).send('Query failed');
+  }
+});
+
+// Read latest sensor values (5 per sensor)
+app.get('/api/newsensors', async (req, res) => {
+  const fluxQuery = `
+    from(bucket: "${bucket}")
+      |> range(start: -30d)
+      |> filter(fn: (r) => r._measurement == "sensor_data")
+      |> filter(fn: (r) => r._field == "decibel")
+      |> group(columns: ["sensor_id"])
+      |> sort(columns: ["_time"], desc: true)
+      |> limit(n: 5)
+  `;
+
+  const result = {};
+  try {
+    for await (const { values, tableMeta } of queryApi.iterateRows(fluxQuery)) {
+      const row = tableMeta.toObject(values);
+      const sid = row.sensor_id;
+      const decibel = Math.min(row._value, 3.5);
+      const time = row._time;
+      if (!result[sid]) result[sid] = [];
+      result[sid].push({ time, decibel });
+    }
+    res.json(result);
+  } catch (err) {
+    console.error('❌ Query failed:', err);
+    res.status(500).send('Query failed');
+  }
+});
+
 // Write dummy data
 app.get('/api/generate', async (req, res) => {
   try {
