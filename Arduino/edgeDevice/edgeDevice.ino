@@ -32,6 +32,9 @@
 const char ssid[] = SECRET_SSID;    // your network SSID
 const char pass[] = SECRET_PASS;    // your network password
 
+const char ap_ssid[] = "AudiTim";
+const char ap_pass[] = "megalangesstarkespasswort";
+
 // MQTT Settings etc...
 WiFiClient espClient;
 MqttClient mqttClient(espClient);
@@ -89,11 +92,11 @@ void loop() {
   uint16_t peakToPeak = probeMax4466();
 
   //Serial.println(peakToPeak);
-  Serial.print("Reference:");
+  /*Serial.print("Reference:");
   Serial.print("4095");
   
   Serial.print(",Local:");
-  Serial.println(peakToPeak);
+  Serial.println(peakToPeak);*/
 
   collectEsp[0][countEspTicks] = peakToPeak;
 
@@ -137,13 +140,11 @@ void sendMqtt(int count){
   serializeJson(doc, jsonString);
 
   // In case of disconnect
-  if (WiFi.status() != WL_CONNECTED) {
+  while(WiFi.status() != WL_CONNECTED) {
     connectWPA2();
   }
+
   if (!mqttClient.connected()) {
-    if (WiFi.status() != WL_CONNECTED) {
-        connectWPA2();
-    }
     mqttClient.stop();
     connectMqtt();
   }
@@ -154,26 +155,42 @@ void sendMqtt(int count){
   doc.clear();
 }
 
-void connectWPA2(){
-  WiFi.softAPdisconnect(true);  // Shutdown AP
-  WiFi.disconnect(true); // Disconnect AI401 before setup
+void connectWPA2() {
+  // Cleanup previous connections
+  WiFi.disconnect(true);        // Disconnect from STA
+  WiFi.softAPdisconnect(true);  // Disable AP
+  delay(100);                   // Tactical delay
 
-  // Start connection
-  WiFi.mode(WIFI_AP_STA); // Mandatory for ESP-Now + Local AP
+  // Connect to STA first
+  WiFi.mode(WIFI_STA);
   WiFi.begin(ssid, pass);
   
-  while (WiFi.status() != WL_CONNECTED) {
-    // failed, retry
+  // Attempt connection for 10 seconds
+  unsigned long startTime = millis();
+  while (WiFi.status() != WL_CONNECTED && millis() - startTime < 10000) {
     Serial.print(".");
     delay(500);
   }
 
+  if (WiFi.status() != WL_CONNECTED) {
+    Serial.println("\nFailed to connect to STA");
+    return; // Will get called again to retry
+  }
+
+  // Get the channel from the connected network
   wifi_ap_record_t apInfo;
   esp_wifi_sta_get_ap_info(&apInfo);
-  int staChannel = apInfo.primary; // Channel of AI401 Network
+  int staChannel = apInfo.primary;
 
-  WiFi.softAP("AudiTim" , "auditim", staChannel);
-  Serial.println("network setup");  
+  Serial.println(staChannel);
+
+  // Start AP with same channel
+  WiFi.mode(WIFI_AP_STA);
+  if (!WiFi.softAP(ap_ssid, ap_pass, staChannel)) {
+    Serial.println("AP failed to start");
+  } else {
+    Serial.printf("\nVisible AP running on channel %d\n", staChannel);
+  }
 }
 
 void connectMqtt(){
