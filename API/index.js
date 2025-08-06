@@ -117,7 +117,7 @@ app.get('/api/generate', async (req, res) => {
 // calculate Array for heatmap
 // GET /api/getArray – Heatmap basierend auf Inverser Distanzgewichtung (IDW)
 
-app.get('/api/getArray', async (req, res) => {
+app.get('/api/getArrayIDW', async (req, res) => {
   const fluxQuery = `
     from(bucket: "${bucket}")
       |> range(start: -30d)
@@ -209,6 +209,317 @@ app.get('/api/getArray', async (req, res) => {
     res.status(500).send("Query failed");
   }
 });
+
+app.get('/api/getArrayIB', async (req, res) => {
+  const fluxQuery = `
+    from(bucket: "${bucket}")
+      |> range(start: -30d)
+      |> filter(fn: (r) => r._measurement == "sensor_data")
+      |> filter(fn: (r) => r._field == "decibel")
+      |> group(columns: ["sensor_id"])
+      |> sort(columns: ["_time"], desc: true)
+      |> first()
+  `;
+
+  const sensorMapping = {
+    d1: "sensor1", // top-left
+    d2: "sensor2", // top-right
+    d3: "sensor3", // bottom-left
+    d4: "sensor4", // bottom-right
+  };
+
+  const sensorValues = {}; // d1..d4
+  const rawSensorData = []; // vollständige Rückgabe
+
+  try {
+    for await (const { values, tableMeta } of queryApi.iterateRows(fluxQuery)) {
+      const row = tableMeta.toObject(values);
+      const sid = row.sensor_id;
+      const decibel = row._value;
+
+      rawSensorData.push({ sensor_id: sid, decibel }); // alle empfangenen Werte speichern
+
+      if (Object.values(sensorMapping).includes(sid)) {
+        const key = Object.entries(sensorMapping).find(([_, val]) => val === sid)?.[0];
+        if (key) {
+          sensorValues[key] = decibel;
+        }
+      }
+    }
+
+    if (Object.keys(sensorValues).length !== 4) {
+      return res.status(400).json({
+        error: "Not all 4 required sensors present in data.",
+        expectedSensors: sensorMapping,
+        receivedMapped: sensorValues,
+        receivedRaw: rawSensorData
+      });
+    }
+
+    const grid = [];
+    for (let row = 0; row < 10; row++) {
+      const y = row / 9;
+      const rowData = [];
+      for (let col = 0; col < 10; col++) {
+        const x = col / 9;
+        const V =
+          sensorValues.d1 * (1 - x) * (1 - y) +
+          sensorValues.d2 * x * (1 - y) +
+          sensorValues.d3 * (1 - x) * y +
+          sensorValues.d4 * x * y;
+        rowData.push(Number(V.toFixed(2)));
+      }
+      grid.push(rowData);
+    }
+
+    res.json({ heatmap: grid });
+
+  } catch (err) {
+    console.error('❌ Query failed:', err);
+    res.status(500).send('Query failed');
+  }
+});
+
+app.get('/api/getArrayWCL', async (req, res) => {
+  const fluxQuery = `
+    from(bucket: "${bucket}")
+      |> range(start: -30d)
+      |> filter(fn: (r) => r._measurement == "sensor_data")
+      |> filter(fn: (r) => r._field == "decibel")
+      |> group(columns: ["sensor_id"])
+      |> sort(columns: ["_time"], desc: true)
+      |> first()
+  `;
+
+  const sensorMapping = {
+    d1: "sensor1", // top-left
+    d2: "sensor2", // top-right
+    d3: "sensor3", // bottom-left
+    d4: "sensor4", // bottom-right
+  };
+
+  const sensorValues = {}; // { d1: x, d2: x, ... }
+  const rawSensorData = [];
+
+  try {
+    for await (const { values, tableMeta } of queryApi.iterateRows(fluxQuery)) {
+      const row = tableMeta.toObject(values);
+      const sid = row.sensor_id;
+      const decibel = row._value;
+
+      rawSensorData.push({ sensor_id: sid, decibel });
+
+      if (Object.values(sensorMapping).includes(sid)) {
+        const key = Object.entries(sensorMapping).find(([_, val]) => val === sid)?.[0];
+        if (key) {
+          sensorValues[key] = decibel;
+        }
+      }
+    }
+
+    if (Object.keys(sensorValues).length !== 4) {
+      return res.status(400).json({
+        error: "Not all 4 required sensors present in data.",
+        expectedSensors: sensorMapping,
+        receivedMapped: sensorValues,
+        receivedRaw: rawSensorData
+      });
+    }
+
+    // Normierte Sensorpositionen
+    const sensorPositions = {
+      d1: { x: 0, y: 0 }, // top-left
+      d2: { x: 1, y: 0 }, // top-right
+      d3: { x: 0, y: 1 }, // bottom-left
+      d4: { x: 1, y: 1 }, // bottom-right
+    };
+
+    // WCL-Gitter (10x10), interpoliert über Abstand zum gewichteten Zentrum
+    const power = 2; // optionaler Exponent zur Verstärkung von Gewichten
+    const gridSize = 10;
+    const grid = [];
+
+    // WCL: Bestimme gewichtetes Zentrum aus Sensorwerten
+    let weightedX = 0;
+    let weightedY = 0;
+    let weightSum = 0;
+
+    for (const [key, { x, y }] of Object.entries(sensorPositions)) {
+      const value = sensorValues[key];
+      const weight = Math.pow(value, power);
+      weightedX += x * weight;
+      weightedY += y * weight;
+      weightSum += weight;
+    }
+
+    const centroidX = weightedX / weightSum;
+    const centroidY = weightedY / weightSum;
+
+    // Optional: maximale Distanz zur Skalierung
+    const maxDistance = Math.sqrt(2); // Diagonale des normierten Feldes
+
+    for (let row = 0; row < gridSize; row++) {
+      const y = row / (gridSize - 1);
+      const rowData = [];
+
+      for (let col = 0; col < gridSize; col++) {
+        const x = col / (gridSize - 1);
+
+        // Abstand zum gewichteten Zentrum
+        const dx = x - centroidX;
+        const dy = y - centroidY;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+
+        // Invertierte Gewichtung auf Basis der Distanz zum Zentrum
+        const value = 1 - distance / maxDistance; // Normiert auf 0-1
+        rowData.push(Number((value * 100).toFixed(2))); // Skaliert auf 0–100 z.B.
+      }
+
+      grid.push(rowData);
+    }
+
+    res.json({ heatmap: grid, centroid: { x: centroidX, y: centroidY } });
+
+  } catch (err) {
+    console.error("❌ Query failed:", err);
+    res.status(500).send("Query failed");
+  }
+});
+
+app.get('/api/getArray', async (req, res) => {
+  const fluxQuery = `
+    from(bucket: "${bucket}")
+      |> range(start: -30d)
+      |> filter(fn: (r) => r._measurement == "sensor_data")
+      |> filter(fn: (r) => r._field == "decibel")
+      |> group(columns: ["sensor_id"])
+      |> sort(columns: ["_time"], desc: true)
+      |> first()
+  `;
+
+  const sensorMapping = {
+    d1: "sensor1",
+    d2: "sensor2",
+    d3: "sensor3",
+    d4: "sensor4",
+  };
+
+  const sensorPositions = {
+    d1: { x: 0, y: 0 },
+    d2: { x: 1, y: 0 },
+    d3: { x: 0, y: 1 },
+    d4: { x: 1, y: 1 },
+  };
+
+  const sensorValues = {};
+  const rawSensorData = [];
+
+  // -----------------------------------------
+  // Einstellbare Parameter
+  const peakStrengthFactor = 1.5; // z.B. 1.0 = normal, 2.0 = doppelt so stark wie der Maximalwert
+  const idwFlatteningPower = 2.0; // z.B. 2.0 = Standard, 1.2 = abgeflacht, 4.0 = steiler
+  const gridSize = 10;
+  // -----------------------------------------
+
+  try {
+    for await (const { values, tableMeta } of queryApi.iterateRows(fluxQuery)) {
+      const row = tableMeta.toObject(values);
+      const sid = row.sensor_id;
+      const decibel = row._value;
+      rawSensorData.push({ sensor_id: sid, decibel });
+
+      if (Object.values(sensorMapping).includes(sid)) {
+        const key = Object.entries(sensorMapping).find(([_, val]) => val === sid)?.[0];
+        if (key) {
+          sensorValues[key] = decibel;
+        }
+      }
+    }
+
+    if (Object.keys(sensorValues).length !== 4) {
+      return res.status(400).json({
+        error: "Not all 4 required sensors present in data.",
+        expectedSensors: sensorMapping,
+        receivedMapped: sensorValues,
+        receivedRaw: rawSensorData
+      });
+    }
+
+    // WCL Peak-Bestimmung
+    const epsilon = 0.0001;
+    let sumWeightedX = 0;
+    let sumWeightedY = 0;
+    let sumWeights = 0;
+
+    for (const [key, value] of Object.entries(sensorValues)) {
+      const pos = sensorPositions[key];
+      const weight = value;
+      sumWeightedX += weight * pos.x;
+      sumWeightedY += weight * pos.y;
+      sumWeights += weight;
+    }
+
+    const peakX = sumWeightedX / (sumWeights || epsilon);
+    const peakY = sumWeightedY / (sumWeights || epsilon);
+    const peakValue = Math.max(...Object.values(sensorValues)) * peakStrengthFactor;
+
+    // Interpolationspunkte inkl. virtuellem Peak
+    const interpolationPoints = [
+      ...Object.entries(sensorPositions).map(([key, pos]) => ({
+        x: pos.x,
+        y: pos.y,
+        value: sensorValues[key],
+      })),
+      { x: peakX, y: peakY, value: peakValue },
+    ];
+
+    // IDW Interpolation
+    const grid = [];
+    for (let row = 0; row < gridSize; row++) {
+      const y = row / (gridSize - 1);
+      const rowData = [];
+
+      for (let col = 0; col < gridSize; col++) {
+        const x = col / (gridSize - 1);
+        let numerator = 0;
+        let denominator = 0;
+
+        for (const point of interpolationPoints) {
+          const dx = x - point.x;
+          const dy = y - point.y;
+          const distance = Math.sqrt(dx * dx + dy * dy) || epsilon;
+          const weight = 1 / Math.pow(distance, idwFlatteningPower);
+          numerator += point.value * weight;
+          denominator += weight;
+        }
+
+        const interpolatedValue = numerator / denominator;
+        rowData.push(Number(interpolatedValue.toFixed(2)));
+      }
+
+      grid.push(rowData);
+    }
+
+    res.json({
+      heatmap: grid,
+      peak: {
+        x: Number(peakX.toFixed(4)),
+        y: Number(peakY.toFixed(4)),
+        value: Number(peakValue.toFixed(2))
+      },
+      settings: {
+        peakStrengthFactor,
+        idwFlatteningPower
+      }
+    });
+
+  } catch (err) {
+    console.error("❌ Query failed:", err);
+    res.status(500).send("Query failed");
+  }
+});
+
+
 
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`API listening on port ${PORT}`);
