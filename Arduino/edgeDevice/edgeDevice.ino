@@ -28,8 +28,6 @@
 // ESP-2:         94:54:C5:E8:BC:40 -> DE:AD:C0:DE:00:02
 // ESP-3:         D4:8C:49:69:D5:74 -> DE:AD:C0:DE:00:03
 // ESP-4:         D4:8C:49:6A:EC:24 -> DE:AD:C0:DE:00:04
-// Liste der Sender-MACs (ESP-2, ESP-3, ESP-4):
-uint8_t senderMacDefault[] = {0xDE,0xAD,0xC0,0xDE,0x00,0x00};
 
 const char ssid[] = SECRET_SSID;    // your network SSID
 const char pass[] = SECRET_PASS;    // your network password
