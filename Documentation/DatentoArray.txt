@@ -1,0 +1,118 @@
+Richtig wäre -> TDOA / Beamforming -> Messung der Zeitdifferenz der Schallwelle zwischen den Sensoren
+                                   -> daraus mit Trilateration oder GCC-PHAT den Einfallswinkel und Ort berechnen
+                                   -> nicht umsetzbar aktuell wegen zu ungenauer Zeitpunkte
+
+Bilineare Interpolation -> Flache ebene der werte -> wenig sinnvoll
+    for (let row = 0; row < 10; row++) {
+      const y = row / 9;
+      const rowData = [];
+      for (let col = 0; col < 10; col++) {
+        const x = col / 9;
+        const V =
+          sensorValues.d1 * (1 - x) * (1 - y) +
+          sensorValues.d2 * x * (1 - y) +
+          sensorValues.d3 * (1 - x) * y +
+          sensorValues.d4 * x * y;
+        rowData.push(Number(V.toFixed(2)));
+      }
+      grid.push(rowData);
+    }
+
+Inverser Distanzgewichtung (IDW) -> grobe gewichtung weg vom Sensor -> Grobe anzeige wo im Raum
+    const power = 2; // IDW: Distanzexponent (2 = inverse quadratische Gewichtung)
+    for (let row = 0; row < 10; row++) {
+      const y = row / 9;
+      const rowData = [];
+
+      for (let col = 0; col < 10; col++) {
+        const x = col / 9;
+
+        let numerator = 0;
+        let denominator = 0;
+
+        for (const [key, { x: sx, y: sy }] of Object.entries(sensorPositions)) {
+          const value = sensorValues[key];
+          const dx = x - sx;
+          const dy = y - sy;
+          const distance = Math.sqrt(dx * dx + dy * dy) || 0.0001; // Verhindert Division durch 0
+
+          const weight = 1 / Math.pow(distance, power);
+          numerator += value * weight;
+          denominator += weight;
+        }
+
+        const interpolatedValue = numerator / denominator;
+        rowData.push(Number(interpolatedValue.toFixed(2)));
+      }
+
+      grid.push(rowData);
+    }
+
+Physikalisches Modell – Rückwärtsprojektion:
+    Du baust ein 2D-Gitter (Heatmap) über den Raum
+    Für jeden Punkt auf dem Gitter:
+        Berechne den erwarteten Pegel an jedem Mikrofon, wenn hier die Quelle wäre
+        Vergleiche das mit den echten Messwerten
+        Speichere die Abweichung (z. B. Fehler-Quadrat)
+    Heatmap zeigt dann:
+        Je geringer der Fehler, desto wahrscheinlicher war hier die Quelle
+    
+    L = L₀ - 20 * log₁₀(d) -> L = gemessener Pegel, L0 = Lautstärke direkt an der Quelle, 𝑑 = Abstand zur Quelle
+
+Maximum Likelihood Estimation (MLE):
+    Du brauchst ein Wahrscheinlichkeitsmodell 𝑃( Messwerte ∣ Quelle an (𝑥,𝑦 ))
+        Für jedes (x,y) im Raum:
+            Berechne die Wahrscheinlichkeit, dass dort die Quelle war, basierend auf den realen Lautstärkewerten
+            Der Punkt mit der höchsten Wahrscheinlichkeit ist deine geschätzte Quelle
+        P = exp(-((L_measured - L_expected)² / 2σ²))
+    Wie wahrscheinlich ist es, dass ein Punkt (x, y) mit Lautstärke L die gemessenen Sensorwerte s₁...s₄ erzeugt hat?
+        das klassische Modell:
+            sᵢ = L - 20 * log10(dᵢ) + ε
+                sᵢ: gemessene Lautstärke am Sensor i
+                L: Lautstärke der Quelle
+                dᵢ: Abstand von der Quelle zum Sensor i
+                ε: Messfehler (normalverteilt, Mittelwert 0)
+            L(x,y,L0)=Π(i=1..4)[1/√(2πσ2)]∗exp(−(si−(L0−20log10(di)))2/(2σ2))
+                -> Das ist das Produkt der Wahrscheinlichkeiten, dass jeder Sensorwert so gemessen wurde, wenn sich die Quelle an (x, y) mit Lautstärke L₀ befindet.
+
+    Dann möglich:
+        Modell: Zwei Quellen (x₁, y₁, L₁) und (x₂, y₂, L₂)
+        sᵢ ≈ L₁ - 20 log10(dᵢ₁) + L₂ - 20 log10(dᵢ₂)
+
+Weighted Centroid Localization (WCL):
+    Jeder Sensorwert wirkt wie eine Gravitationskraft, die die Quelle „zu sich zieht“.
+    Du rechnest daraus einen gewichteten Mittelpunkt, der der Quelle am nächsten kommt.
+    Du kannst auf deiner Heatmap z. B. einen Gauß-Hotspot an diesem Punkt erzeugen
+    
+    centerX = (x₁·w₁ + x₂·w₂ + x₃·w₃ + x₄·w₄) / (w₁ + w₂ + w₃ + w₄)
+    centerY = (y₁·w₁ + y₂·w₂ + y₃·w₃ + y₄·w₄) / (w₁ + w₂ + w₃ + w₄)
+
+Machine Learning:
+    Du trainierst ein Modell (z. B. KNN, RandomForest oder MLP), das aus 4 dB-Werten die Position der Quelle voraussagt.
+    Damit kannst du direkt aus Messwerten auf die Position schließen.
+
+| Methode                                | Typ                       | Vorteile                                                       | Nachteile                                                           | Quelle bestimmbar?             |
+| -------------------------------------- | ------------------------- | -------------------------------------------------------------- | ------------------------------------------------------------------- | ------------------------------ |
+| Bilineare Interpolation                | Interpolation             | - Schnelle, symmetrische Heatmap (linearen Verläufen)          | - Kein Bezug zu physikalischer Ausbreitung                          | 🔸 Ungefähr (Ebene)            | rein mathematische Glättung, die keinen Rückschluss auf die reale Schallquelle erlaubt. Nutzt keine physikalische Information.
+| IDW (Inverse Distance Weighting)       | Interpolation             | - Einfach umzusetzen Glatte Heatmap Intuitiv                   | - Keine echte Lokalisierung Quelle verschwimmt bei mehreren Peaks   | 🔸 Ungefähr (Wellen)           | du kriegst ein weiches Feld, aber kein klares Zentrum. Das Maximum liegt oft in der Nähe der lautesten Sensoren, aber kann je nach Dämpfung verschwommen sein.
+| Physikalisches Modell (Distance-Based) | Modellbasiert             | - Berücksichtigt reale Schallausbreitung                       | - Annahme über Quellpegel nötig Rechenintensiver                    | ✅ Ja (als Heatmap)            | du erhältst eine Heatmap, deren Maximum mit hoher Wahrscheinlichkeit am Ort der stärksten Schallquelle liegt. Kann auf Wunsch scharf oder breit dargestellt werden.
+| Maximum Likelihood Estimation (MLE)    | Wahrscheinlichkeitsmodell | - Statistisch fundiert Robust gegen Messrauschen               | - Braucht Modell für Messfehler Langsamer als WCL                   | ✅ Ja (als Wahrscheinlichkeit) | du bekommst eine Wahrscheinlichkeitsverteilung über die Raumfläche. Wo die Wahrscheinlichkeit am höchsten ist, dort wird die Quelle vermutet.
+| WCL (Weighted Centroid)                | Schätzwert                | - Leicht zu implementieren Guter erster Indikator              | - Ungenau bei stark asymmetrischer Verteilung                       | ✅ Ja (1 Koordinate)           | liefert dir ein einzelnes (x,y) als Zentrum aller Lautstärkewirkungen. Funktioniert gut, wenn ein dominanter Bereich laut ist. Ideal für „Dozent vorne“ vs „Student hinten“.
+| Machine Learning Regression            | Lernbasiert               | - Extrem schnell nach Training Erweiterbar auf komplexe Muster | - Trainingsdaten nötig Keine Garantie bei Out-of-Distribution Cases | ✅ Ja (xy direkt)              | du bekommst direkt ein (x, y) zurück, wenn das Modell gut trainiert ist. Nutzt implizit alle verfügbaren Muster.
+
+Machine Learning wsl beste wenn man es gut macht (hoher aufwand)
+WCL am besten für wo in dem raum ist der Lautstärken Mittelpunkt
+IDW am besten für Hinten ist es noch lauter als vorne
+MLE viel aufwand aber könnte gut werden?
+
+X Mischung aus IDW und WCL:
+    ( 1. Virtuelle Sensoren / Quelle modellieren )
+        Füge zusätzliche Punkte in die Heatmap, die keine echten Sensoren sind, aber simulierte Quellen darstellen.
+        Erstelle hypothetisch 10–20 Positionen im Raum (Mitte, Vorderreihe, Rückreihe usw.).
+        Für jeden Punkt berechnest du:
+            Wie wahrscheinlich ist es, dass von hier der Schall kam, basierend auf der Distanz zu den Sensoren und deren Lautstärke.
+        Dann: Summe über alle hypothetischen Quellen → erzeugt deinen Heatmap-Wert.
+
+    2. Kombiniere mit WCL-Light
+        Berechne zusätzlich zum IDW die "wahrscheinlichste Quelle" mit WCL (also den gewichteten Mittelpunkt):
+        Dann setz einen Peak an dieser Stelle und blende IDW drum herum weich ein (z. B. additiv mit einem Gauss-Blob oder Gradient).
