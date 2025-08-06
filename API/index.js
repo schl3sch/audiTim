@@ -115,8 +115,7 @@ app.get('/api/generate', async (req, res) => {
 
 // Read latest value per sensor
 // calculate Array for heatmap
-// GET /api/getArray – Heatmap basierend auf Inverser Distanzgewichtung (IDW)
-
+// GET /api/getArray – Heatmap basierend auf Inverser Distanzgewichtung (IDW) mit Peekerkennung durch WCL
 app.get('/api/getArray', async (req, res) => {
   const fluxQuery = `
     from(bucket: "${bucket}")
@@ -129,21 +128,34 @@ app.get('/api/getArray', async (req, res) => {
   `;
 
   const sensorMapping = {
-    d1: "sensor1", // top-left
-    d2: "sensor2", // top-right
-    d3: "sensor3", // bottom-left
-    d4: "sensor4", // bottom-right
+    d1: "sensor1",
+    d2: "sensor2",
+    d3: "sensor3",
+    d4: "sensor4",
   };
 
-  const sensorValues = {}; // { d1: x, d2: x, ... }
+  const sensorPositions = {
+    d1: { x: 0, y: 0 },
+    d2: { x: 1, y: 0 },
+    d3: { x: 0, y: 1 },
+    d4: { x: 1, y: 1 },
+  };
+
+  const sensorValues = {};
   const rawSensorData = [];
+
+  // -----------------------------------------
+  // Einstellbare Parameter
+  const peakStrengthFactor = 1.5; // z.B. 1.0 = normal, 2.0 = doppelt so stark wie der Maximalwert
+  const idwFlatteningPower = 2.0; // z.B. 2.0 = Standard, 1.2 = abgeflacht, 4.0 = steiler
+  const gridSize = 10;
+  // -----------------------------------------
 
   try {
     for await (const { values, tableMeta } of queryApi.iterateRows(fluxQuery)) {
       const row = tableMeta.toObject(values);
       const sid = row.sensor_id;
       const decibel = row._value;
-
       rawSensorData.push({ sensor_id: sid, decibel });
 
       if (Object.values(sensorMapping).includes(sid)) {
@@ -163,35 +175,51 @@ app.get('/api/getArray', async (req, res) => {
       });
     }
 
-    // Sensorpositionen im normierten Koordinatensystem
-    const sensorPositions = {
-      d1: { x: 0, y: 0 }, // top-left
-      d2: { x: 1, y: 0 }, // top-right
-      d3: { x: 0, y: 1 }, // bottom-left
-      d4: { x: 1, y: 1 }, // bottom-right
-    };
+    // WCL Peak-Bestimmung
+    const epsilon = 0.0001;
+    let sumWeightedX = 0;
+    let sumWeightedY = 0;
+    let sumWeights = 0;
 
-    const power = 100; // IDW: Distanzexponent (2 = inverse quadratische Gewichtung)
+    for (const [key, value] of Object.entries(sensorValues)) {
+      const pos = sensorPositions[key];
+      const weight = value;
+      sumWeightedX += weight * pos.x;
+      sumWeightedY += weight * pos.y;
+      sumWeights += weight;
+    }
+
+    const peakX = sumWeightedX / (sumWeights || epsilon);
+    const peakY = sumWeightedY / (sumWeights || epsilon);
+    const peakValue = Math.max(...Object.values(sensorValues)) * peakStrengthFactor;
+
+    // Interpolationspunkte inkl. virtuellem Peak
+    const interpolationPoints = [
+      ...Object.entries(sensorPositions).map(([key, pos]) => ({
+        x: pos.x,
+        y: pos.y,
+        value: sensorValues[key],
+      })),
+      { x: peakX, y: peakY, value: peakValue },
+    ];
+
+    // IDW Interpolation
     const grid = [];
-
-    for (let row = 0; row < 10; row++) {
-      const y = row / 9;
+    for (let row = 0; row < gridSize; row++) {
+      const y = row / (gridSize - 1);
       const rowData = [];
 
-      for (let col = 0; col < 10; col++) {
-        const x = col / 9;
-
+      for (let col = 0; col < gridSize; col++) {
+        const x = col / (gridSize - 1);
         let numerator = 0;
         let denominator = 0;
 
-        for (const [key, { x: sx, y: sy }] of Object.entries(sensorPositions)) {
-          const value = sensorValues[key];
-          const dx = x - sx;
-          const dy = y - sy;
-          const distance = Math.sqrt(dx * dx + dy * dy) || 0.0001; // Verhindert Division durch 0
-
-          const weight = 1 / Math.pow(distance, power);
-          numerator += value * weight;
+        for (const point of interpolationPoints) {
+          const dx = x - point.x;
+          const dy = y - point.y;
+          const distance = Math.sqrt(dx * dx + dy * dy) || epsilon;
+          const weight = 1 / Math.pow(distance, idwFlatteningPower);
+          numerator += point.value * weight;
           denominator += weight;
         }
 
@@ -202,7 +230,18 @@ app.get('/api/getArray', async (req, res) => {
       grid.push(rowData);
     }
 
-    res.json({ heatmap: grid });
+    res.json({
+      heatmap: grid,
+      peak: {
+        x: Number(peakX.toFixed(4)),
+        y: Number(peakY.toFixed(4)),
+        value: Number(peakValue.toFixed(2))
+      },
+      settings: {
+        peakStrengthFactor,
+        idwFlatteningPower
+      }
+    });
 
   } catch (err) {
     console.error("❌ Query failed:", err);
