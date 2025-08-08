@@ -118,6 +118,38 @@
 	captionpos=b,            % sets the caption-position to bottom
 	backgroundcolor=\color{ListingBackground} % Hintergrundfarbe des Quellcodes setzen.
 }
+\usepackage{xcolor}
+
+% Define JavaScript language for listings
+\lstdefinelanguage{JavaScript}{
+  keywords={break, case, catch, continue, debugger, default, delete, do, else, finally, for, function, if, in, instanceof, new, return, switch, this, throw, try, typeof, var, void, while, with, let, const, yield, import, export, class, extends, super},
+  keywordstyle=\color{blue}\bfseries,
+  ndkeywords={boolean, throw, implements, import, this},
+  ndkeywordstyle=\color{darkgray}\bfseries,
+  identifierstyle=\color{black},
+  sensitive=false,
+  comment=[l]{//},
+  morecomment=[s]{/*}{*/},
+  commentstyle=\color{gray}\ttfamily,
+  stringstyle=\color{red}\ttfamily,
+  morestring=[b]',
+  morestring=[b]"
+}
+
+% General listings style
+\lstset{
+  language=JavaScript,
+  backgroundcolor=\color{gray!10},
+  basicstyle=\ttfamily\small,
+  numbers=left,
+  numberstyle=\tiny\color{gray},
+  stepnumber=1,
+  numbersep=8pt,
+  showstringspaces=false,
+  breaklines=true,
+  frame=single,
+  tabsize=2
+}
 
 % Glossar
 \usepackage[
@@ -129,6 +161,7 @@
 
 %Akronyme
 \usepackage[printonlyused,footnote]{acronym}
+\usepackage{adjustbox} % in die Präambel
 
 % Fussnoten
 \usepackage[perpage, hang, multiple, stable]{footmisc}
