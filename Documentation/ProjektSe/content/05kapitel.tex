@@ -27,6 +27,9 @@ for (let row = 0; row < 10; row++) {
   grid.push(rowData);
 }
 \end{lstlisting}
+\begin{minipage}[b]{0.5\textwidth}
+  \includegraphics[width=\textwidth]{../images/Heatmap/IBHeatmap.png}
+\end{minipage}
 
 \textbf{Inverse Distance Weighting (IDW):}  
 Hierbei wird der Einfluss eines Sensors umgekehrt proportional zur Distanz zur betrachteten Position gewichtet, häufig mit einem Distanzexponenten von $p=2$ (inverse quadratische Gewichtung). Das Ergebnis ist eine weiche Heatmap, deren Maximum meist in der Nähe der lautesten Sensoren liegt. Bei mehreren Schallquellen oder komplexer Raumakustik verschwimmt jedoch das Ergebnis.
@@ -52,6 +55,9 @@ for (let row = 0; row < 10; row++) {
   grid.push(rowData);
 }
 \end{lstlisting}
+\begin{minipage}[b]{0.5\textwidth}
+  \includegraphics[width=\textwidth]{../images/Heatmap/IDWHeatmap.png}
+\end{minipage}
 
 \textbf{Physikalisches Modell – Rückwärtsprojektion:}  
 Für jeden Punkt im Raum wird der erwartete Pegel an jedem Mikrofon berechnet:
@@ -70,12 +76,54 @@ Der Punkt mit der höchsten Wahrscheinlichkeit wird als Quellenposition angenomm
 
 \textbf{Weighted Centroid Localization (WCL):}  
 Jeder Sensorwert wirkt wie eine „Gravitationskraft“, die die geschätzte Quelle in seine Richtung zieht. Durch Berechnung des gewichteten Mittelpunkts aller Sensoren lässt sich eine einzelne $(x,y)$-Position bestimmen, die den Schwerpunkt der Schallstärke darstellt. Gut geeignet, wenn ein dominanter Bereich im Raum deutlich lauter ist.
+\begin{lstlisting}[language=JavaScript, caption={Weighted Centroid Localization (WCL)}]
+	power = 2;    
+  for (const [key, { x, y }] of Object.entries(sensorPositions)) {
+    const value = sensorValues[key];
+    const weight = Math.pow(value, power);
+    weightedX += x * weight;
+    weightedY += y * weight;
+    weightSum += weight;
+  }
+\end{lstlisting}
+\begin{minipage}[b]{0.5\textwidth}
+  \includegraphics[width=\textwidth]{../images/Heatmap/WCLHeatmap.png}
+\end{minipage}
 
 \textbf{Machine Learning:}  
 Durch Training eines Modells (z. B. KNN, Random Forest, MLP) mit bekannten Quellenpositionen und zugehörigen Pegelwerten kann die Quellenposition direkt aus den Messwerten vorhergesagt werden. Bei guter Trainingsbasis liefert dies sehr schnelle und präzise Ergebnisse. Allerdings sind umfangreiche und repräsentative Trainingsdaten erforderlich.
 
 \textbf{Kombinierter IDW-WCL-Ansatz:}  
 Zur Verbesserung der Lokalisierungsgenauigkeit wird zunächst eine IDW-Heatmap berechnet. Anschließend wird der durch WCL ermittelte Schwerpunkt durch einen zusätzlichen Peak (z. B. Gauß-Blob) verstärkt und in die Heatmap eingeblendet. Dadurch lassen sich weiche Verteilungen mit einem klaren Maximum kombinieren.
+\begin{lstlisting}[language=JavaScript, caption={Kombinierter IDW-WCL-Ansatz}]
+    for (let row = 0; row < gridSize; row++) {
+      const y = row / (gridSize - 1);
+      const rowData = [];
+
+      for (let col = 0; col < gridSize; col++) {
+        const x = col / (gridSize - 1);
+        let numerator = 0;
+        let denominator = 0;
+
+        for (const point of interpolationPoints) {
+          const dx = x - point.x;
+          const dy = y - point.y;
+          const distance = Math.sqrt(dx * dx + dy * dy) || epsilon;
+          const weight = 1 / Math.pow(distance, idwFlatteningPower);
+          numerator += point.value * weight;
+          denominator += weight;
+        }
+
+        const interpolatedValue = numerator / denominator;
+        rowData.push(Number(interpolatedValue.toFixed(2)));
+      }
+
+      grid.push(rowData);
+    }
+\end{lstlisting}
+\begin{minipage}[b]{0.5\textwidth}
+  \includegraphics[width=\textwidth]{../images/Heatmap/IDWWCLHeatmap.png}
+\end{minipage}
 
 \section{Vergleich der Verfahren}
 
@@ -113,3 +161,5 @@ Aus den Tests ergeben sich folgende Tendenzen:
 \end{itemize}
 
 Eine Kombination aus IDW und WCL hat sich als vielversprechend erwiesen, um eine aussagekräftige Heatmap mit einem klar erkennbaren Maximum zu erzeugen.
+Zudem ist diese Methode relativ einfach zu implementieren und benötigt keine aufwändige Kalibrierung.
+Die Heatmap wird mit aktuellen Daten getestet, somit kann der Algorythmus durch die gewichtung von IDW und WCL angepasst werden.
