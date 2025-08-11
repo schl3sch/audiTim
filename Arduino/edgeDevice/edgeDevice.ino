@@ -10,8 +10,10 @@
 #include <WiFi.h> // Is installed automatically. Don't install additional libs
 #include <ArduinoMqttClient.h> // Has to be installed manually
 #include <esp_now.h>
-#include "arduino_secrets.h" // Local file with secrets
-#include "probeMax.h" // Unified max4466 probe code
+#include <esp_wifi.h>
+#include "../arduino_secrets.h" // Local file with secrets
+#include "../probeMax.h" // Unified max4466 probe code
+//#include "../inmp441.h" // I2S Microphone
 #include "time.h" // For Timestamps NTP
 #include <ArduinoJson.h> // For MQTT Json
 //#include "esp_wpa2.h" // For PEAP StudentenWlan
@@ -30,6 +32,9 @@
 const char ssid[] = SECRET_SSID;    // your network SSID
 const char pass[] = SECRET_PASS;    // your network password
 
+const char ap_ssid[] = "AudiTim";
+const char ap_pass[] = "megalangesstarkespasswort";
+
 // MQTT Settings etc...
 WiFiClient espClient;
 MqttClient mqttClient(espClient);
@@ -46,7 +51,6 @@ unsigned long  count = 0;
 uint8_t empfaengerMac[] = {0xDE, 0x8C, 0x49, 0x69, 0xD5, 0x74};
 typedef struct struct_message {
   uint16_t audio; // 0-4095 Mic volume
-  uint16_t error; // Error = Number of failed messages
 } struct_message; // Typedef
 uint16_t failedTransmissionCounter = 0;
 
@@ -72,11 +76,13 @@ void setup() {
 
   // Connect to MQTT
   connectMqtt();
-
+  
   // ESP-Now
   esp_now_init();
   esp_now_register_recv_cb(onReceive);
 }
+
+
 
 void loop() {
   for (int i = 0; i < 4; i++){
@@ -86,11 +92,11 @@ void loop() {
   uint16_t peakToPeak = probeMax4466();
 
   //Serial.println(peakToPeak);
-  Serial.print("Reference:");
+  /*Serial.print("Reference:");
   Serial.print("4095");
   
   Serial.print(",Local:");
-  Serial.println(peakToPeak);
+  Serial.println(peakToPeak);*/
 
   collectEsp[0][countEspTicks] = peakToPeak;
 
@@ -119,7 +125,6 @@ void onReceive(const esp_now_recv_info* info, const uint8_t* data, int len) {
 
   Serial.print("Ref:4095,");
   Serial.printf("%u-Data:%u,", identifier, incomingData.audio); // %u for unsigned integer
-  Serial.printf("%u-Error:%u\n", identifier, incomingData.error);
   collectEsp[identifier - 1][countEspTicks] = incomingData.audio;
 }
 
@@ -135,13 +140,11 @@ void sendMqtt(int count){
   serializeJson(doc, jsonString);
 
   // In case of disconnect
-  if (WiFi.status() != WL_CONNECTED) {
+  while(WiFi.status() != WL_CONNECTED) {
     connectWPA2();
   }
+
   if (!mqttClient.connected()) {
-    if (WiFi.status() != WL_CONNECTED) {
-        connectWPA2();
-    }
     mqttClient.stop();
     connectMqtt();
   }
@@ -150,6 +153,56 @@ void sendMqtt(int count){
   mqttClient.println(jsonString);
   mqttClient.endMessage();
   doc.clear();
+}
+
+void connectWPA2() {
+  // Cleanup previous connections
+  WiFi.disconnect(true);        // Disconnect from STA
+  WiFi.softAPdisconnect(true);  // Disable AP
+  delay(100);                   // Tactical delay
+
+  // Connect to STA first
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(ssid, pass);
+  
+  // Attempt connection for 10 seconds
+  unsigned long startTime = millis();
+  while (WiFi.status() != WL_CONNECTED && millis() - startTime < 10000) {
+    Serial.print(".");
+    delay(500);
+  }
+
+  if (WiFi.status() != WL_CONNECTED) {
+    Serial.println("\nFailed to connect to STA");
+    return; // Will get called again to retry
+  }
+
+  // Get the channel from the connected network
+  wifi_ap_record_t apInfo;
+  esp_wifi_sta_get_ap_info(&apInfo);
+  int staChannel = apInfo.primary;
+
+  Serial.println(staChannel);
+
+  // Start AP with same channel
+  WiFi.mode(WIFI_AP_STA);
+  if (!WiFi.softAP(ap_ssid, ap_pass, staChannel)) {
+    Serial.println("AP failed to start");
+  } else {
+    Serial.printf("\nVisible AP running on channel %d\n", staChannel);
+  }
+}
+
+void connectMqtt(){
+  mqttClient.setUsernamePassword(MQTT_USER, MQTT_PASS);
+  Serial.print("Attempting MQTT connection");
+  while (!mqttClient.connect(broker, port)) {
+    Serial.print("MQTT connection failed! Error code = ");
+    Serial.println(mqttClient.connectError());
+    Serial.println("Trying again in 1 second");
+    delay(1000);
+  }
+  Serial.println("You're connected to the MQTT broker!");
 }
 
 /*void connectToStudentenWlan(){
@@ -173,29 +226,3 @@ void sendMqtt(int count){
   }
   Serial.println("You're connected to the network");
 }*/
-
-void connectWPA2(){
-  WiFi.disconnect(true); // Disconnect before setup
-  WiFi.mode(WIFI_STA); // Mandatory for ESP-Now
-  // Start connection
-  WiFi.begin(ssid, pass);
-  
-  while (WiFi.status() != WL_CONNECTED) {
-    // failed, retry
-    Serial.print(".");
-    delay(500);
-  }
-  Serial.println("You're connected to the network");
-}
-
-void connectMqtt(){
-  mqttClient.setUsernamePassword(MQTT_USER, MQTT_PASS);
-  Serial.print("Attempting MQTT connection");
-  while (!mqttClient.connect(broker, port)) {
-    Serial.print("MQTT connection failed! Error code = ");
-    Serial.println(mqttClient.connectError());
-    Serial.println("Trying again in 1 second");
-    delay(1000);
-  }
-  Serial.println("You're connected to the MQTT broker!");
-}

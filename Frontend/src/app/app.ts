@@ -14,12 +14,14 @@ import { ArrayTestComponent } from './array-test/array-test.component';
 export class App {
   chartData = signal<any>(null); 
   textData = signal<any>(null);
+  reloadHeatmap = signal(false);
   constructor(private sensor: Sensor) {}
 
   generateDummy() {
     this.sensor.generateDummyData().subscribe(res => {
       this.textData.set(res);
-      this.chartData.set(null); // Explicitly clear chart
+      this.chartData.set(null); // Clear chart
+      this.reloadHeatmap.set(true);
     });
   }
 
