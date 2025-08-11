@@ -1,0 +1,39 @@
+const data = msg.payload;
+
+const baseTimestamp = Number(data.timestamp) * 1000; // convert to ms
+const baseSequence = data.sequence;
+const values = data.value;
+
+const result = [];
+
+for (let sensor = 0; sensor < 4; sensor++) {
+    for (let i = 0; i < 10; i++) {
+        const index = (sensor * 10) + i;
+        const reading = Number(values[index]);
+
+        result.push({
+            payload: {
+                measurement: "sensor_data",
+                value: reading,
+                timestamp: new Date(baseTimestamp + (i * 100)).toISOString(),
+                sensor_id: `sensor_${ sensor + 1}`
+            }
+        });
+    }
+}
+
+return [result];
+
+export INFLUX_HOST=http://influxdb:8086
+export INFLUX_ORG=DHBW
+export INFLUX_TOKEN=123456789
+
+curl -v --request POST \
+"$INFLUX_HOST/api/v2/write?org=$INFLUX_ORG&bucket=DB&precision=ms" \
+  --header "Authorization: Token $INFLUX_TOKEN" \
+  --header "Content-Type: text/plain; charset=utf-8" \
+  --header "Accept: application/json" \
+  --data-binary "home,room=Living\ Room temp=21.1,hum=35.9,co=0i 1641024000"
+
+1754477930000
+1754470756000
