@@ -1,6 +1,9 @@
 // Installation instructions for the ESP32-Board
 // https://randomnerdtutorials.com/installing-the-esp32-board-in-arduino-ide-windows-instructions/
 
+// Boards:
+// esp32 by Espressif Systems@3.2.1
+
 // Select ESP32 Dev Module as your board
 
 // Libraries:
@@ -10,7 +13,6 @@
 #include <WiFi.h> // Is installed automatically. Don't install additional libs
 #include <ArduinoMqttClient.h> // Has to be installed manually
 #include <esp_now.h>
-#include <esp_wifi.h>
 #include "../arduino_secrets.h" // Local file with secrets
 #include "../probeMax.h" // Unified max4466 probe code
 //#include "../inmp441.h" // I2S Microphone
@@ -31,9 +33,6 @@
 
 const char ssid[] = SECRET_SSID;    // your network SSID
 const char pass[] = SECRET_PASS;    // your network password
-
-const char ap_ssid[] = "AudiTim";
-const char ap_pass[] = "megalangesstarkespasswort";
 
 // MQTT Settings etc...
 WiFiClient espClient;
@@ -71,7 +70,6 @@ void setup() {
   delay(1000);
 
   // Connect to enterprise WiFi
-  //connectToStudentenWlan();
   connectWPA2();
 
   // Connect to MQTT
@@ -82,8 +80,6 @@ void setup() {
   esp_now_register_recv_cb(onReceive);
 }
 
-
-
 void loop() {
   for (int i = 0; i < 4; i++){
     collectEsp[i][countEspTicks] = 5000;
@@ -92,11 +88,11 @@ void loop() {
   uint16_t peakToPeak = probeMax4466();
 
   //Serial.println(peakToPeak);
-  /*Serial.print("Reference:");
+  Serial.print("Reference:");
   Serial.print("4095");
   
   Serial.print(",Local:");
-  Serial.println(peakToPeak);*/
+  Serial.println(peakToPeak);
 
   collectEsp[0][countEspTicks] = peakToPeak;
 
@@ -158,7 +154,6 @@ void sendMqtt(int count){
 void connectWPA2() {
   // Cleanup previous connections
   WiFi.disconnect(true);        // Disconnect from STA
-  WiFi.softAPdisconnect(true);  // Disable AP
   delay(100);                   // Tactical delay
 
   // Connect to STA first
@@ -176,21 +171,6 @@ void connectWPA2() {
     Serial.println("\nFailed to connect to STA");
     return; // Will get called again to retry
   }
-
-  // Get the channel from the connected network
-  wifi_ap_record_t apInfo;
-  esp_wifi_sta_get_ap_info(&apInfo);
-  int staChannel = apInfo.primary;
-
-  Serial.println(staChannel);
-
-  // Start AP with same channel
-  WiFi.mode(WIFI_AP_STA);
-  if (!WiFi.softAP(ap_ssid, ap_pass, staChannel)) {
-    Serial.println("AP failed to start");
-  } else {
-    Serial.printf("\nVisible AP running on channel %d\n", staChannel);
-  }
 }
 
 void connectMqtt(){
@@ -204,25 +184,3 @@ void connectMqtt(){
   }
   Serial.println("You're connected to the MQTT broker!");
 }
-
-/*void connectToStudentenWlan(){
-  WiFi.disconnect(true); // Disconnect before setup
-  WiFi.mode(WIFI_STA); // Mandatory for ESP-Now
-
-  // WPA2 Enterprise config
-  esp_wifi_sta_wpa2_ent_set_identity((uint8_t *)SECRET_USERNAME, strlen(SECRET_USERNAME));
-  esp_wifi_sta_wpa2_ent_set_username((uint8_t *)SECRET_USERNAME, strlen(SECRET_USERNAME));
-  esp_wifi_sta_wpa2_ent_set_password((uint8_t *)SECRET_USERPASS, strlen(SECRET_USERPASS));
-  esp_wpa2_config_t config = WPA2_CONFIG_INIT_DEFAULT();
-  esp_wifi_sta_wpa2_ent_enable(&config);
-  
-  // Start connection
-  WiFi.begin("Studenten WLAN");
-  
-  while (WiFi.status() != WL_CONNECTED) {
-    // failed, retry
-    Serial.print(".");
-    delay(500);
-  }
-  Serial.println("You're connected to the network");
-}*/
