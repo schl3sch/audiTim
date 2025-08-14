@@ -2,13 +2,14 @@ import { AfterViewInit, Component } from '@angular/core';
 import { Sensor } from '../sensor.service';
 import Plotly from 'plotly.js-dist-min';
 import { FormsModule } from '@angular/forms';
+import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-heatmap',
   standalone: true,
-  imports: [FormsModule],
+  imports: [CommonModule, FormsModule],
   templateUrl: './heatmap.html',
-  styleUrl: './heatmap.scss'
+  styleUrls: ['./heatmap.scss']
 })
 
 export class Heatmap implements AfterViewInit {
