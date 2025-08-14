@@ -1,9 +1,10 @@
-<p>admin works!</p>
-<h1>Admin</h1>
-<app-array-test></app-array-test>
-
-<div style="text-align: center; margin: 20px;">
-  <button (click)="generateDummy()">Generate Dummy Data</button>
+<div class="card p-4 mb-4 shadow-sm">
+  <h2>Admin</h2>
+  <app-array-test></app-array-test>
 </div>
 
-<pre *ngIf="textData()">{{ textData() | json }}</pre>
+<div class="text-center mb-4">
+  <button class="btn btn-primary" (click)="generateDummy()">Generate Dummy Data</button>
+</div>
+
+<pre *ngIf="textData()" class="bg-light p-3 rounded">{{ textData() | json }}</pre>

@@ -261,6 +261,18 @@ app.get('/api/getArray', async (req, res) => {
   }
 });
 
+// multiple heatmap frames (dummy)
+app.get('/api/getArrays', (req, res) => {
+  try {
+    const mockData = JSON.parse(fs.readFileSync('./mock-data/mockdataArrays.json', 'utf8'));
+    res.json(mockData);
+  } catch (err) {
+    console.error("❌ Failed to load mockdata.json:", err);
+    res.status(500).send("Failed to load mock data");
+  }
+});
+
+
 // API Start
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`API listening on port ${PORT}`);

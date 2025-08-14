@@ -24,4 +24,8 @@ export class Sensor {
   getHeatmapArray(): Observable<{ heatmap: number[][] }> {
   return this.http.get<{ heatmap: number[][] }>(`${this.baseUrl}/getArray`);
   }
+
+  getHeatmapArrays(): Observable<{ frames: number[][][] }> {
+    return this.http.get<{ frames: number[][][] }>(`${this.baseUrl}/getArrays`);
+  }
 }

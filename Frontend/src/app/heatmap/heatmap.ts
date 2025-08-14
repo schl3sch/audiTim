@@ -1,62 +1,70 @@
-import { AfterViewInit, Component, Input, OnChanges, SimpleChanges } from '@angular/core';
+import { AfterViewInit, Component } from '@angular/core';
 import { Sensor } from '../sensor.service';
 import Plotly from 'plotly.js-dist-min';
+import { FormsModule } from '@angular/forms';
+import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-heatmap',
   standalone: true,
-  imports: [],
+  imports: [CommonModule, FormsModule],
   templateUrl: './heatmap.html',
-  styleUrl: './heatmap.scss'
+  styleUrls: ['./heatmap.scss']
 })
-export class Heatmap implements AfterViewInit, OnChanges {
-  @Input() reload: boolean = false;
+export class Heatmap implements AfterViewInit {
+  frames: number[][][] = [];
+  currentFrameIndex: number = 0;
 
   constructor(private sensor: Sensor) {}
 
   ngAfterViewInit(): void {
-    this.loadHeatmap();
+    this.loadHeatmapFrames();
   }
 
-  ngOnChanges(changes: SimpleChanges): void {
-    if (changes['reload'] && changes['reload'].currentValue === true) {
-      this.loadHeatmap();
-    }
-  }
-
-  private loadHeatmap(): void {
-    this.sensor.getHeatmapArray().subscribe({
+  private loadHeatmapFrames(): void {
+    this.sensor.getHeatmapArrays().subscribe({
       next: (res) => {
-        const z = res.heatmap;
-        const size = z.length;
-        const x = Array.from({ length: size }, (_, i) => i);
-        const y = Array.from({ length: size }, (_, i) => i);
-
-        Plotly.newPlot(
-          'plotly-heatmap',
-          [
-            {
-              z,
-              x,
-              y,
-              type: 'surface',
-              colorscale: 'YlOrRd',
-            },
-          ],
-          {
-            title: { text: '3D Heatmap' },
-            autosize: true,
-            scene: {
-              xaxis: { title: { text: 'X' } },
-              yaxis: { title: { text: 'Y' } },
-              zaxis: { title: { text: 'Z' } },
-            },
-          }
-        );
+        this.frames = res.frames; // JSON aus dem Backend
+        this.currentFrameIndex = 0;
+        this.updatePlot(this.frames[this.currentFrameIndex]);
       },
       error: (err) => {
-        console.error('Fehler beim Laden der Heatmap:', err);
-      },
+        console.error('Fehler beim Laden der Heatmap-Frames:', err);
+      }
     });
+  }
+
+  onSliderChange(event: Event): void {
+    const target = event.target as HTMLInputElement;
+    this.currentFrameIndex = +target.value;
+    this.updatePlot(this.frames[this.currentFrameIndex]);
+  }
+
+  private updatePlot(z: number[][]): void {
+    const size = z.length;
+    const x = Array.from({ length: size }, (_, i) => i);
+    const y = Array.from({ length: size }, (_, i) => i);
+
+    Plotly.newPlot(
+      'plotly-heatmap',
+      [
+        {
+          z,
+          x,
+          y,
+          type: 'surface',
+          colorscale: 'YlOrRd',
+        },
+      ],
+      {
+        title: { text: `3D Heatmap – Frame ${this.currentFrameIndex + 1}` },
+        autosize: true,
+        scene: {
+          xaxis: { title: { text: 'X' } },
+          yaxis: { title: { text: 'Y' } },
+          zaxis: { title: { text: 'Z' } },
+        },
+      }
+    );
   }
 }

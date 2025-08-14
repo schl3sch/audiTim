@@ -1,14 +1,14 @@
-<div class="sidebar">
-  <h3>Navigation</h3>
-  <ul>
-    <li>
-      <a routerLink="admin" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Admin</a>
+<div class="sidebar d-flex flex-column align-items-start p-3 bg-dark text-white">
+  <h4 class="mb-4">Navigation</h4>
+  <ul class="nav nav-pills flex-column mb-auto w-100">
+    <li class="nav-item">
+      <a routerLink="/admin" routerLinkActive="active" class="nav-link text-white">Admin</a>
     </li>
-    <li>
-      <a routerLink="zweid" routerLinkActive="active">2D Sensoren</a>
+    <li class="nav-item">
+      <a routerLink="/zweid" routerLinkActive="active" class="nav-link text-white">2D Sensoren</a>
     </li>
-    <li>
-      <a routerLink="heatmap" routerLinkActive="active">Heatmap</a>
+    <li class="nav-item">
+      <a routerLink="/heatmap" routerLinkActive="active" class="nav-link text-white">Heatmap</a>
     </li>
   </ul>
 </div>

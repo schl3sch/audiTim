@@ -4,6 +4,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { routes } from './app/app.routes';
 import { App } from './app/app';
 import 'zone.js';
+import 'bootstrap/dist/css/bootstrap.min.css';
 
 bootstrapApplication(App, {
   providers: [

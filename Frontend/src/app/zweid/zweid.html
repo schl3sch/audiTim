@@ -1,9 +1,10 @@
-<p>zweid works!</p>
-<h1>2D Sensoren</h1>
+<div class="card p-4 mb-4 shadow-sm">
+  <h2>2D Sensoren</h2>
+</div>
 
-<div style="text-align: center; margin: 20px;">
-  <button (click)="loadAllSensors()">Load All Sensors</button>
-  <button (click)="loadNewSensors()">Load New Sensors</button>
+<div class="text-center mb-4">
+  <button class="btn btn-primary me-2" (click)="loadAllSensors()">Load All Sensors</button>
+  <button class="btn btn-secondary" (click)="loadNewSensors()">Load New Sensors</button>
 </div>
 
 <app-sensor-chart *ngIf="chartData()" [sensorResponse]="chartData()"></app-sensor-chart>

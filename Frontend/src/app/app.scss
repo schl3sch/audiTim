@@ -1,11 +1,13 @@
 .main-content {
       margin-left: 200px;
       padding: 20px;
+      background-color: #f8f9fa; // helles Grau
+      overflow-y: auto;
     }
 
 .sidebar {
   width: 200px; // feste Breite
-  background: #f4f4f4;
+   background-color: #2b2b2b;
   padding: 20px;
   box-shadow: 2px 0 5px rgba(0,0,0,0.1);
 }
