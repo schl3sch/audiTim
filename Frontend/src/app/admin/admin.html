@@ -1,0 +1,9 @@
+<p>admin works!</p>
+<h1>Admin</h1>
+<app-array-test></app-array-test>
+
+<div style="text-align: center; margin: 20px;">
+  <button (click)="generateDummy()">Generate Dummy Data</button>
+</div>
+
+<pre *ngIf="textData()">{{ textData() | json }}</pre>

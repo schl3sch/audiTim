@@ -1,0 +1,9 @@
+<p>zweid works!</p>
+<h1>2D Sensoren</h1>
+
+<div style="text-align: center; margin: 20px;">
+  <button (click)="loadAllSensors()">Load All Sensors</button>
+  <button (click)="loadNewSensors()">Load New Sensors</button>
+</div>
+
+<app-sensor-chart *ngIf="chartData()" [sensorResponse]="chartData()"></app-sensor-chart>

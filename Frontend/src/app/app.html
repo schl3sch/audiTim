@@ -1,16 +1,5 @@
 <h1>Sensor Data Tool</h1>
-
-<app-array-test></app-array-test>
-
-<div style="text-align: center; margin: 20px;">
-  <button (click)="loadAllSensors()">Load All Sensors</button>
-  <button (click)="loadNewSensors()">Load New Sensors</button>
-  <button (click)="generateDummy()">Generate Dummy Data</button>
+<app-navbar></app-navbar>
+<div class="main-content">
+  <router-outlet></router-outlet>
 </div>
-
-<app-sensor-chart *ngIf="chartData()" [sensorResponse]="chartData()"></app-sensor-chart>
-
-<pre *ngIf="textData()">{{ textData() | json }}</pre>
-
-<app-heatmap [reload]="reloadHeatmap()"></app-heatmap>
-
