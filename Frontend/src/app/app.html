@@ -5,9 +5,3 @@
     <router-outlet></router-outlet>
   </div>
 </div>
-
-<app-sensor-chart *ngIf="chartData()" [sensorResponse]="chartData()"></app-sensor-chart>
-
-<pre *ngIf="textData()">{{ textData() | json }}</pre>
-
-<app-heatmap></app-heatmap>
