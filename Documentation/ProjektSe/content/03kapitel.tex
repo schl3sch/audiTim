@@ -55,14 +55,21 @@ Die ESP-Module bieten im Vergleich zu klassischen Arduinos eine integrierte WLAN
 In Kombination mit ESP-NOW ergibt sich somit eine kompakte, performante und zuverlässige Lösung.
 
 \subsection{Frontend}
-Für die Umsetzung des Frontends wurde Angular gewählt, 
-da im Team bereits umfangreiche Erfahrung mit diesem Framework vorhanden war. 
-Angular bietet eine klare Struktur durch komponentenbasiertes Design, 
-erleichtert die Wiederverwendbarkeit von UI-Elementen und unterstützt eine saubere Trennung von Logik und Darstellung. 
-Dadurch konnte effizient und wartbar entwickelt werden.
+Für die Umsetzung des Frontends wurde das Framework \textit{Angular} gewählt. 
+Diese netschiedung basiert auf technischen Faktoren und persönlichen Preferenzen. 
+Angular bietet eine klare Struktur durch komponentenbasiertes Design und ist für die moderne Webentwicklung gut geeignet.
+Es erleichtert die Wiederverwendbarkeit von eigenen aber auch externen UI-Elementen und unterstützt eine saubere Trennung von Logik und Darstellung. 
 
-Das Frontend läuft in einem eigenen Docker-Container und kommuniziert, 
-über ein internes Netzwerk, mit dem separat laufenden Backend-Container. 
+Im Vergleich dazu ist \textit{React} ein von Meta entwickeltes UI-Framework. 
+\textit{Angular} und \textit{React} haben beide eine komponentenbasierte Architektur. 
+Diese Komponenten sind innerhalb anderer Komponenten wiederverwendbar und somit endlos wiederverwertbar. 
+Beide sind Open Source. Daher haben React und Angular große Entwicklergemeinschaften, die die Ressourcen regelmäßig erweitern.
+Angular ist ein vollwertiges Framework, während React eine JavaScript-Bibliothek ist. 
+Deshalb muss React mit einem Framework gepaart werden, um eine schnelle, schöne und kompatible Benutzeroberfläche zu erstellen. 
+\cite{kinsta2023angularvreact}
+
+Da außerdem im Team bereits umfangreiche Erfahrung mit diesem Framework vorhanden war, fiel die Entscheidung zugunsten von Angular.
+Das Frontend läuft in einem eigenen Docker-Container und kommuniziert, über ein internes Netzwerk, mit dem separat laufenden Backend-Container. 
 So bleibt die Architektur modular, skalierbar und einfach wartbar.
 
 Die Darstellung der Daten wird über Angular-Komponenten realisiert,
@@ -86,10 +93,38 @@ Für dieses Projekt, welches einen schnellen Einstieg, umfangreiche Dokumentatio
 ist Express daher die pragmatischere Wahl.
 Zudem sind Gruppenmitglieder bereits mit Express vertraut, was die Einarbeitungszeit verkürzt und die Produktivität steigert. 
 
-Die Anbindung an eine InfluxDB erfolgt über die offizielle Client-Bibliothek. Die Entscheidung für InfluxDB basiert auf der Empfehlung der "Verteilten Systeme"-Dozenten sowie der nahtlosen Integration in das Node.js-Backend, was die Implementierung vereinfacht.
+Die Anbindung an eine InfluxDB erfolgt über die offizielle Client-Bibliothek. 
 Neben dem Abrufen historischer Sensorwerte werden auch Funktionen zum Schreiben von Dummy-Daten bereitgestellt.
 Diese werden, solange die Verbindung zu den wirklichen Sensorwerten noch nicht hergestellt ist, zum Testen verwendet.
+
+Für die Speicherung der Sensordaten wurde InfluxDB gewählt. 
+Eine Zeitreihen-Datenbank, die speziell für viele konsekutive Datenströme optimiert ist. 
+InfluxDB bietet eine simple API und gutes visuelles UI, ohne dass viel Konfiguration nötig ist.
+Im Vergleich zu einer relationalen Datenbank wie TimescaleDB, die auf PostgreSQL basiert,
+ist InfluxDB deutlich einfacher zu handhaben und benötigt weniger Overhead für die Konfiguration.
+Um eine TimescaleDB sicher zum laufen zu bringen, sind komplexe Zugriff-Skripte benötigt, um die Benutzer zu verwalten.
+InfluxDB hingegen arbeitet mit einem einfachen Benutzer- und Rollenkonzept. 
+Auch für die API-Authentifizierung ist InfluxDB mithilfe von Tokens und Secrets deutlich einfacher zu konfigurieren.
+Der Rationale Aspekt einer traditionellen ist sicherlich in vieler Hinsicht nützlich, wird aber in diesem Projekt nicht benötigt.
+Eine nahtlosen Integration in das Node.js-Backend ist mit der offiziellen InfluxDB-Bibliothek kein Problem.
+InfluxDB wurde uns initial von den "Verteilten Systeme"-Dozenten ausdrücklich empfohlen, da wir viele Zeitwerte speichern und analysieren wollen.
 
 Das Backend ist ebenfalls in einem eigenen Docker-Container gekapselt. 
 Die Kommunikation mit dem Frontend erfolgt über definierte HTTP-Endpunkte im Container-Netzwerk. 
 Diese Trennung verbessert die Wartbarkeit und erlaubt eine flexible Skalierung beider Komponenten unabhängig voneinander.
+
+\subsection{MQTT Subscriber}
+Um den Datenfluss zu verfollständigen fehlt eine Brücke zwischen dem MQTT Server und der InfluxDB. 
+Hierfür wird ein sogenannter MQTT-Subscriber benötigt, der die Daten vom MQTT-Broker abonniert und in die InfluxDB schreibt.
+Technisch gesehen kann dies mit einer vielzahl von Frameworks / Sprachen / Tools umgesetzt werden. 
+Zum Beispiel mit Python, Node.js, Golang oder auch Java.
+Wir haben uns für Node-RED entschieden, da es eine einfache und schnelle Möglichkeit bietet, um Daten von MQTT zu InfluxDB zu übertragen.
+Node-RED ist eine visuelle Programmierumgebung, die auf Node.js basiert und es ermöglicht, Datenströme einfach zu verarbeiten und zu transformieren.
+Besonders das debugging und die Visualisierung der Datenströme ist in Node-RED sehr einfach und intuitiv.
+\cite{nodered2023docs}
+
+Im Vergleich zu z.B. einem Python-Skript ist Node-RED deutlich einfacher zu handhaben.
+Natürlich ist Node-RED nicht so performant oder bietet dieselbe Flexibilität und Kontrolle wie ein selbstgeschriebenes Skript,
+ist aber dafür deutlich einfacher zu konfigurieren und zu warten.
+Besonders in unserem spezifischen Fall, wo wenig Kontrolle über den schlussendlichen Server besteht, ist Node-RED eine gute Wahl.
+Eine automatische Ausführung von Skripten ist beinahe unmöglich, das keine Kontrolle über Sudo-Level Systemdiensten besteht.
