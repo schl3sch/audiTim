@@ -20,12 +20,12 @@
         "rap": true,
         "rh": 0,
         "inputs": 0,
-        "x": 310,
+        "x": 390,
         "y": 160,
         "wires": [
             [
                 "caa9d18689140a85",
-                "bf6a215f9586bb05"
+                "da662d9248c57a75"
             ]
         ]
     },
@@ -34,38 +34,20 @@
         "type": "function",
         "z": "6761cd81a24d274a",
         "name": "function 1",
-        "func": "const data = msg.payload;\n\nmsg.payload = {\n    bucket: 'DB',\n    precision: 'ms',\n    token: '123456789',\n    method: 'POST',\n    data: []\n};\n\nconst baseTimestamp = Number(data.timestamp) * 1000; // convert to ms\nconst baseSequence = data.sequence;\nconst values = data.value;\n\nfor (let i = 0; i < 10; i++) {\n    const indexSensor1 = i;\n    const indexSensor2 = 10 + i;\n    const indexSensor3 = 20 + i;\n    const indexSensor4 = 30 + i;\n    const reading1 = Number(values[indexSensor1]);\n    const reading2 = Number(values[indexSensor2]);\n    const reading3 = Number(values[indexSensor3]);\n    const reading4 = Number(values[indexSensor4]);\n\n    msg.payload.data.push({\n        measurement: 'sensor_data',\n        fields: {\n            sensor_1: reading1,\n            sensor_2: reading2,\n            sensor_3: reading3,\n            sensor_4: reading4\n        },\n\n        timestamp: baseTimestamp + (i * 100),\n    });\n}\n\nreturn msg;",
+        "func": "const data = msg.payload;\n\nmsg.payload = {\n    bucket: 'DB',\n    precision: 'ms',\n    token: '123456789',\n    method: 'POST',\n    data: []\n};\n\nconst baseTimestamp = Number(data.timestamp) * 1000; // convert to ms\nconst baseSequence = data.sequence;\nconst values = data.value;\n\nfor (let i = 0; i < 10; i++) {\n    const indexSensor1 = i;\n    const indexSensor2 = 10 + i;\n    const indexSensor3 = 20 + i;\n    const indexSensor4 = 30 + i;\n    const reading1 = Number(values[indexSensor1]);\n    const reading2 = Number(values[indexSensor2]);\n    const reading3 = Number(values[indexSensor3]);\n    const reading4 = Number(values[indexSensor4]);\n\n    msg.payload.data.push({\n        measurement: 'sensor_data',\n        fields: {\n            sensor_1: reading1,\n            sensor_2: reading2,\n            sensor_3: reading3,\n            sensor_4: reading4\n        },\n\n        timestamp: baseTimestamp + (i * 100) + 7200,\n    });\n}\n\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 480,
-        "y": 200,
+        "x": 600,
+        "y": 160,
         "wires": [
             [
-                "7701405c8a7ed7d9",
                 "257fd1e076dbb753"
             ]
         ]
-    },
-    {
-        "id": "7701405c8a7ed7d9",
-        "type": "debug",
-        "z": "6761cd81a24d274a",
-        "name": "Influx Mirror",
-        "active": false,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "payload",
-        "targetType": "msg",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 650,
-        "y": 240,
-        "wires": []
     },
     {
         "id": "e86b8df27f37b702",
@@ -79,12 +61,12 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 270,
-        "y": 240,
+        "x": 350,
+        "y": 220,
         "wires": [
             [
-                "caa9d18689140a85",
-                "bf6a215f9586bb05"
+                "da662d9248c57a75",
+                "caa9d18689140a85"
             ]
         ]
     },
@@ -100,34 +82,17 @@
         "onceDelay": 0.1,
         "topic": "",
         "x": 100,
-        "y": 160,
+        "y": 220,
         "wires": [
             []
         ]
     },
     {
-        "id": "bf6a215f9586bb05",
-        "type": "debug",
-        "z": "6761cd81a24d274a",
-        "name": "MQTT Debug",
-        "active": false,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "payload",
-        "targetType": "msg",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 660,
-        "y": 280,
-        "wires": []
-    },
-    {
         "id": "af428bb866f14fb8",
         "type": "debug",
         "z": "6761cd81a24d274a",
-        "name": "InfluxDebug",
-        "active": false,
+        "name": "Debug",
+        "active": true,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
@@ -135,7 +100,7 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 650,
+        "x": 710,
         "y": 320,
         "wires": []
     },
@@ -145,11 +110,32 @@
         "z": "6761cd81a24d274a",
         "server": "ebd9cdaa089e58f8",
         "name": "InfluxDB",
-        "x": 640,
-        "y": 200,
+        "x": 760,
+        "y": 160,
         "wires": [
             [
                 "af428bb866f14fb8"
+            ]
+        ]
+    },
+    {
+        "id": "da662d9248c57a75",
+        "type": "function",
+        "z": "6761cd81a24d274a",
+        "name": "function 2",
+        "func": "const data = msg.payload;\n\nmsg.payload = {\n    bucket: 'DB',\n    precision: 'ms',\n    token: '123456789',\n    method: 'POST',\n    data: []\n};\n\n// -----------------------------------------\n// Einstellbare Parameter\nconst peakStrengthFactor = 1.5; // z.B. 1.0 = normal, 2.0 = doppelt so stark wie der Maximalwert\nconst idwFlatteningPower = 2.0; // z.B. 2.0 = Standard, 1.2 = abgeflacht, 4.0 = steiler\nconst gridSize = 10;\n// -----------------------------------------\n\nconst baseTimestamp = Number(data.timestamp) * 1000; // convert to ms\nconst baseSequence = data.sequence;\nconst values = data.value;\nlet heatmapArr = new Uint8Array(100);\nconst sensorValues = {};\n\n// No loop for better readability\nsensorValues[0] = Number(values[0]);\nsensorValues[1] = Number(values[10]);\nsensorValues[2] = Number(values[20]);\nsensorValues[3] = Number(values[30]);\n\nconst sensorPositions = {\n    0: { x: 0, y: 0 },\n    1: { x: 1, y: 0 },\n    2: { x: 0, y: 1 },\n    3: { x: 1, y: 1 },\n};\n\n// WCL Peak-Bestimmung\nconst epsilon = 0.0001;\nlet sumWeightedX = 0;\nlet sumWeightedY = 0;\nlet sumWeights = 0;\n\nfor (const [key, value] of Object.entries(sensorValues)) {\n    const pos = sensorPositions[key];\n    const weight = value;\n    sumWeightedX += weight * pos.x;\n    sumWeightedY += weight * pos.y;\n    sumWeights += weight;\n}\n\nconst peakX = sumWeightedX / (sumWeights || epsilon);\nconst peakY = sumWeightedY / (sumWeights || epsilon);\nconst peakValue = Math.max(...Object.values(sensorValues)) * peakStrengthFactor;\n\n// Interpolationspunkte inkl. virtuellem Peak\nconst interpolationPoints = [\n    ...Object.entries(sensorPositions).map(([key, pos]) => ({\n        x: pos.x,\n        y: pos.y,\n        value: sensorValues[key],\n    })),\n    { x: peakX, y: peakY, value: peakValue },\n];\n\n// IDW Interpolation\nlet arrIndex = 0;\nfor (let row = 0; row < gridSize; row++) {\n    const y = row / (gridSize - 1);\n\n    for (let col = 0; col < gridSize; col++) {\n        const x = col / (gridSize - 1);\n        let numerator = 0;\n        let denominator = 0;\n\n        for (const point of interpolationPoints) {\n            const dx = x - point.x;\n            const dy = y - point.y;\n            const distance = Math.sqrt(dx * dx + dy * dy) || epsilon;\n            const weight = 1 / Math.pow(distance, idwFlatteningPower);\n            numerator += point.value * weight;\n            denominator += weight;\n        }\n\n        const interpolatedValue = numerator / denominator;\n        const downscaledValue = Math.floor(interpolatedValue/16);\n        heatmapArr[arrIndex] = downscaledValue;\n        arrIndex++;\n    }\n}\n\nconst base64Data = Buffer.from(heatmapArr).toString('base64');\n\nmsg.payload.data.push({\n    measurement: 'heatmap_arr',\n    fields: {\n        base64: base64Data,\n        peakX: peakX,\n        peakY: peakY,\n        peakValue: peakValue\n    },\n    timestamp: baseTimestamp,\n});\n\nreturn msg;\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 600,
+        "y": 220,
+        "wires": [
+            [
+                "af428bb866f14fb8",
+                "257fd1e076dbb753"
             ]
         ]
     },
