@@ -261,6 +261,74 @@ app.get('/api/getArray', async (req, res) => {
   }
 });
 
+// API Heatmap dekosierungs test
+app.get("/api/getHeatmaps", async (req, res) => {
+  const fluxQuery = `
+    from(bucket: "${bucket}")
+      |> range(start: -1h)
+      |> filter(fn: (r) => r._measurement == "heatmap_arr")
+      |> filter(fn: (r) => r._field == "base64")
+      |> sort(columns: ["_time"], desc: true)
+      |> limit(n:5)
+  `;
+
+  const result = [];
+
+  try {
+    for await (const { values, tableMeta } of queryApi.iterateRows(fluxQuery)) {
+      const obj = tableMeta.toObject(values);
+
+      // Base64 → Uint8Array → JS Array
+      const buffer = Buffer.from(obj._value, "base64");
+      const arr = Array.from(new Uint8Array(buffer));
+
+      result.push({
+        time: obj._time,
+        values: arr
+      });
+    }
+
+    res.json({ data: result });
+  } catch (error) {
+    console.error("Influx query error:", error);
+    res.status(500).json({ error: "Error querying InfluxDB" });
+  }
+});
+
+// API Peeks dekosierungs test
+app.get("/api/getPeaks", async (req, res) => {
+  const fluxQuery = `
+    from(bucket: "${bucket}")
+      |> range(start: -1h)
+      |> filter(fn: (r) => r._measurement == "heatmap_arr")
+      |> filter(fn: (r) => r._field == "peakX" or r._field == "peakY" or r._field == "peakValue")
+      |> sort(columns: ["_time"], desc: true)
+      |> limit(n:15)  // 3 Felder * 5 Datensätze
+  `;
+
+  const grouped = {};
+
+  try {
+    for await (const { values, tableMeta } of queryApi.iterateRows(fluxQuery)) {
+      const obj = tableMeta.toObject(values);
+
+      if (!grouped[obj._time]) {
+        grouped[obj._time] = { time: obj._time };
+      }
+
+      grouped[obj._time][obj._field] = obj._value;
+    }
+
+    // Nur die letzten 5 zusammengefassten Datensätze
+    const result = Object.values(grouped).slice(0, 5);
+
+    res.json({ data: result });
+  } catch (error) {
+    console.error("Influx query error:", error);
+    res.status(500).json({ error: "Error querying InfluxDB" });
+  }
+});
+
 // API Start
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`API listening on port ${PORT}`);
