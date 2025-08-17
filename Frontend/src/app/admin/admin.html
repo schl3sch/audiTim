@@ -7,4 +7,4 @@
   <button class="btn btn-primary" (click)="generateDummy()">Generate Dummy Data</button>
 </div>
 
-<pre *ngIf="textData()" class="bg-light p-3 rounded">{{ textData() | json }}</pre>
+<pre *ngIf="textData()" class="bg-light p-3 rounded overflow-auto">{{ textData() | json }}</pre>
