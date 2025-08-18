@@ -1,1 +1,42 @@
-/* You can add global styles to this file, and also import other style files */
+/* Hintergrund & Text */
+body.light {
+  background-color: #f8f9fa;
+  color: #212529;
+}
+
+body.dark {
+  background-color: #121212;
+  color: #f8f9fa;
+}
+
+/* Alles, was drin ist */
+body.dark .app-container,
+body.dark .main-content,
+body.dark .card {
+  background-color: #1e1e1e !important;
+  color: #f8f9fa !important;
+}
+
+body.dark .text-muted {
+  color: #cccccc !important;
+}
+
+body.dark pre {
+  background-color: #2b2b2b !important;
+  color: #f8f9fa !important;
+}
+
+body.dark .btn-outline-primary {
+  border-color: #4a90e2 !important;
+  color: #4a90e2 !important;
+}
+
+body.dark .btn-outline-primary:hover {
+  background-color: #4a90e2 !important;
+  color: #fff !important;
+}
+
+/* Optional: Slider dark */
+body.dark input[type="range"] {
+  background-color: #2b2b2b;
+}

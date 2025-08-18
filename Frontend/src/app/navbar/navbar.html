@@ -1,6 +1,15 @@
 <div class="d-flex flex-column align-items-start p-3 bg-dark text-white vh-100 position-fixed top-0 start-0" style="width: 200px;">
   <h4 class="mb-4">Navigation</h4>
+
   <ul class="nav nav-pills flex-column mb-auto w-100">
+    <div class="form-check form-switch ms-3 mt-3">
+  <input class="form-check-input" type="checkbox" role="switch" id="themeSwitch" (change)="toggleTheme($event)">
+  <label class="form-check-label" for="themeSwitch">Dark Mode</label>
+  <div> </div>
+</div>
+    <li class="nav-item mb-2">
+      <a routerLink="/homepage" routerLinkActive="active" class="nav-link text-white rounded py-2 px-3">Homepage</a>
+    </li>
     <li class="nav-item mb-2">
       <a routerLink="/admin" routerLinkActive="active" class="nav-link text-white rounded py-2 px-3">Admin</a>
     </li>
