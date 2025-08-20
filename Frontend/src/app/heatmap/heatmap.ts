@@ -114,16 +114,24 @@ export class Heatmap implements AfterViewInit, OnInit  {
 
     const now = new Date();
     let start: Date;
+    let stop: Date;
 
     switch (this.selectedRange) {
       case '1h':
         start = new Date(now.getTime() - 1 * 60 * 60 * 1000);
+        stop = now;
         break;
       case '24h':
         start = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+        stop = now;
         break;
       case '7d':
         start = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        stop = now;
+        break;
+      case 'Mathe1': 
+        start = new Date('2025-08-18T08:00:00Z');
+        stop = new Date('2025-08-18T10:00:00Z');
         break;
       default:
         return;
@@ -131,7 +139,7 @@ export class Heatmap implements AfterViewInit, OnInit  {
 
     this.loadHeatmapFrames({
       start: start.toISOString(),
-      stop: now.toISOString(),
+      stop: stop.toISOString(),
     });
   }
 
