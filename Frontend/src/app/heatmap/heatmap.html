@@ -1,15 +1,82 @@
-<div class="card p-4 mb-4 shadow-sm">
-  <h2>Heatmap</h2>
-</div>
-<div>
-  <input
-    type="range"
-    min="0"
-    [max]="frames.length - 1"
-    [(ngModel)]="currentFrameIndex"
-    (input)="onSliderChange($event)"
-  />
-  <span>Frame: {{ currentFrameIndex + 1 }}/{{ frames.length }}</span>
+<div class="card mb-4 shadow-sm p-4">
+  <h2 class="mb-3">Heatmap</h2>
+  <p *ngIf="availableStart && availableStop">
+    Daten verfügbar von <strong>{{ availableStart | date:'short' }}</strong> bis 
+    <strong>{{ availableStop | date:'short' }}</strong>
+  </p>
 </div>
 
-<div id="plotly-heatmap" style="width: 100%; height: 600px;"></div>
+<!-- Zeitbereich Auswahl -->
+<div class="card mb-4 shadow-sm p-4">
+  <div class="row g-3 align-items-center">
+    <!-- Dropdown für vordefinierte Ranges -->
+    <div class="col-auto">
+      <label for="presetRange" class="form-label">Zeitraum wählen:</label>
+      <select id="presetRange" [(ngModel)]="selectedRange" (change)="onPresetRangeChange()" class="form-select">
+        <option value="" disabled selected>Zeitraum wählen...</option>
+        <option value="1h">Letzte Stunde</option>
+        <option value="24h">Letzte 24h</option>
+        <option value="7d">Letzte 7 Tage</option>
+        <option value="custom">Benutzerdefiniert</option>
+      </select>
+    </div>
+
+    <!-- Custom Range Auswahl -->
+    <div *ngIf="selectedRange === 'custom'" class="col-auto">
+      <div class="row g-2 align-items-center">
+        <div class="col-auto">
+          <label class="form-label">Von:</label>
+          <input
+            type="datetime-local"
+            [(ngModel)]="customStart"
+            [min]="availableStart | date:'yyyy-MM-ddTHH:mm'"
+            [max]="availableStop | date:'yyyy-MM-ddTHH:mm'"
+            class="form-control"
+          >
+        </div>
+        <div class="col-auto">
+          <label class="form-label">Bis:</label>
+          <input
+            type="datetime-local"
+            [(ngModel)]="customStop"
+            [min]="availableStart | date:'yyyy-MM-ddTHH:mm'"
+            [max]="availableStop | date:'yyyy-MM-ddTHH:mm'"
+            class="form-control"
+          >
+        </div>
+        <div class="col-auto mt-4">
+          <button (click)="loadCustomRange()" class="btn btn-primary">Laden</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Slider mit Play-Button -->
+<div class="card mb-4 shadow-sm p-4">
+  <div class="d-flex align-items-center gap-3">
+    <!-- Play/Pause Button -->
+    <button class="btn btn-primary" (click)="togglePlay()">
+      <span *ngIf="!isPlaying">&#9658;</span> <!-- Play Symbol -->
+      <span *ngIf="isPlaying">&#10074;&#10074;</span> <!-- Pause Symbol -->
+    </button>
+
+    <!-- Slider -->
+    <div class="flex-grow-1">
+      <label class="form-label">Frame: {{ currentFrameIndex + 1 }}/{{ frames.length }}</label>
+      <input
+        type="range"
+        min="0"
+        [max]="frames.length - 1"
+        [(ngModel)]="currentFrameIndex"
+        (input)="onSliderChange($event)"
+        class="form-range"
+      />
+    </div>
+  </div>
+</div>
+
+<!-- Heatmap -->
+<div class="card mb-4 shadow-sm p-4">
+  <div id="plotly-heatmap" style="width: 100%; height: 600px;"></div>
+</div>

@@ -35,6 +35,17 @@ export class Sensor {
   }
 
   getHeatmaps(): Observable<{ data: HeatmapFrame[] }> {
-  return this.http.get<{ data: HeatmapFrame[] }>(`${this.baseUrl}/getHeatmaps`);
+  return this.http.get<{ data: HeatmapFrame[] }>(`${this.baseUrl}/getAllHeatmaps`);
+  }
+
+  postHeatmapsRange(start: string, stop: string): Observable<{ data: HeatmapFrame[] }> {
+  return this.http.post<{ data: HeatmapFrame[] }>(`${this.baseUrl}/postHeatmapsRange`, {
+    start,
+    stop,
+  });
+  }
+
+  getHeatmapRange(): Observable<{ oldest: string; newest: string }> {
+  return this.http.get<{ oldest: string; newest: string }>(`${this.baseUrl}/getHeatmapRange`);
   }
 }
