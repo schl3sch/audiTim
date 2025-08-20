@@ -2,6 +2,11 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 
+export interface HeatmapFrame {
+  time: string;
+  grid: number[][];
+  }
+  
 // sensor.service.ts
 @Injectable({ providedIn: 'root' })
 export class Sensor {
@@ -27,5 +32,9 @@ export class Sensor {
 
   getHeatmapArrays(): Observable<{ frames: number[][][] }> {
     return this.http.get<{ frames: number[][][] }>(`${this.baseUrl}/getArrays`);
+  }
+
+  getHeatmaps(): Observable<{ data: HeatmapFrame[] }> {
+  return this.http.get<{ data: HeatmapFrame[] }>(`${this.baseUrl}/getHeatmaps`);
   }
 }

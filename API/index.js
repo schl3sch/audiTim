@@ -280,7 +280,7 @@ app.get("/api/getHeatmaps", async (req, res) => {
       |> filter(fn: (r) => r._measurement == "heatmap_arr")
       |> filter(fn: (r) => r._field == "base64")
       |> sort(columns: ["_time"], desc: true)
-      |> limit(n:5)
+      |> limit(n:3600)
   `;
 
   const result = [];
@@ -293,9 +293,15 @@ app.get("/api/getHeatmaps", async (req, res) => {
       const buffer = Buffer.from(obj._value, "base64");
       const arr = Array.from(new Uint8Array(buffer));
 
+      // Array in 10x10 Matrix umwandeln
+      const grid = [];
+      for (let i = 0; i < 10; i++) {
+        grid.push(arr.slice(i * 10, (i + 1) * 10));
+      }
+
       result.push({
         time: obj._time,
-        values: arr
+        grid: grid
       });
     }
 
@@ -305,6 +311,7 @@ app.get("/api/getHeatmaps", async (req, res) => {
     res.status(500).json({ error: "Error querying InfluxDB" });
   }
 });
+
 
 // API Peeks dekosierungs test
 app.get("/api/getPeaks", async (req, res) => {

@@ -1,5 +1,5 @@
 import { AfterViewInit, Component } from '@angular/core';
-import { Sensor } from '../sensor.service';
+import { Sensor, HeatmapFrame } from '../sensor.service';
 import Plotly from 'plotly.js-dist-min';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
@@ -11,9 +11,8 @@ import { CommonModule } from '@angular/common';
   templateUrl: './heatmap.html',
   styleUrls: ['./heatmap.scss']
 })
-
 export class Heatmap implements AfterViewInit {
-  frames: number[][][] = [];
+  frames: HeatmapFrame[] = [];
   currentFrameIndex: number = 0;
 
   constructor(private sensor: Sensor) {}
@@ -23,11 +22,13 @@ export class Heatmap implements AfterViewInit {
   }
 
   private loadHeatmapFrames(): void {
-    this.sensor.getHeatmapArrays().subscribe({
+    this.sensor.getHeatmaps().subscribe({
       next: (res) => {
-        this.frames = res.frames; // JSON aus dem Backend
-        this.currentFrameIndex = 0;
-        this.updatePlot(this.frames[this.currentFrameIndex]);
+        this.frames = res.data; // vom Backend
+        if (this.frames.length > 0) {
+          this.currentFrameIndex = 0;
+          this.updatePlot(this.frames[this.currentFrameIndex].grid);
+        }
       },
       error: (err) => {
         console.error('Fehler beim Laden der Heatmap-Frames:', err);
@@ -38,7 +39,7 @@ export class Heatmap implements AfterViewInit {
   onSliderChange(event: Event): void {
     const target = event.target as HTMLInputElement;
     this.currentFrameIndex = +target.value;
-    this.updatePlot(this.frames[this.currentFrameIndex]);
+    this.updatePlot(this.frames[this.currentFrameIndex].grid);
   }
 
   private updatePlot(z: number[][]): void {
@@ -46,7 +47,7 @@ export class Heatmap implements AfterViewInit {
     const x = Array.from({ length: size }, (_, i) => i);
     const y = Array.from({ length: size }, (_, i) => i);
 
-    Plotly.newPlot(
+    Plotly.react(
       'plotly-heatmap',
       [
         {
@@ -58,14 +59,19 @@ export class Heatmap implements AfterViewInit {
         },
       ],
       {
-        title: { text: `3D Heatmap – Frame ${this.currentFrameIndex + 1}` },
+        title: { 
+          text: `3D Heatmap – Frame ${this.currentFrameIndex + 1} (${this.frames[this.currentFrameIndex].time})` 
+        },
         autosize: true,
         scene: {
           xaxis: { title: { text: 'X' } },
           yaxis: { title: { text: 'Y' } },
           zaxis: { title: { text: 'Z' } },
+          camera: { eye: { x: 1.5, y: 1.5, z: 1.0 } },
+          dragmode: false, // kein Rotieren / Zoomen
+          },
+        margin: { l: 0, r: 0, b: 0, t: 40 },
         },
-      }
-    );
+        { displayModeBar: false });
   }
 }
