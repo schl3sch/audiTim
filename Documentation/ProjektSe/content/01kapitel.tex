@@ -31,6 +31,8 @@ Aufgrundlage des MVPs sollen die folgenden Qualitätsmerkmale sichergestellt wer
 \begin{itemize}
     \item \textbf{Echtheit \& Qualität der Daten:}
     Nur qualitativ "gute" Daten z.B. durch optimierte Mikrofongehäuse ermöglichen realistische Messwerte und damit eine sinnvolle Analyse der akustischen Verhältnisse im Raum.
-    \item \textbf{Accountability der Daten:}
-    Es muss nachvollziehbar sein, welche Sensoren zu welchem Zeitpunkt welche Daten erfasst haben.
+\item \textbf{Accountability der Daten:}
+    Es muss nachvollziehbar sein, welche Sensoren zu welchem Zeitpunkt welche Daten erfasst haben. Diese Anforderung soll durch das Einführen einer eindeutigen ID für jeden Sensor, die mit jedem Value mitgeschickt wird, umgesetzt werden. Zusätzlich soll in jeder Übertragungsstelle ein Logging der Daten erfolgen um den Datenfluss nachvollziehbar zu machen.
+    \item \textbf{Verfügbarkeit:}
+    Da die Übertragungswege mit ESP-NOW und MQTT unterbrochen werden könnten ist es wichtig die Verfügbarkeit von Daten sicherzustellen indem ein möglicher Ausfall schnellstmöglich erkannt wird um diesen dann beheben zu können. Dies soll sichergestellt werden durch die Einführung einer Notification, die ausgelöst wird beim Ausfall eines Gerätes. Diese soll über e-mail oder WhatsApp Messenger bereitgestellt werden.
 \end{itemize}
