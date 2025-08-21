@@ -4,7 +4,6 @@
   <div class="text-center mb-5">
     <h1 class="display-4 fw-bold">Willkommen bei AudiTim</h1>
     <p class="lead text-muted">Analysiere, visualisiere und verwalte deine Sensordaten in Echtzeit.</p>
-    <button routerLink="/admin" class="btn btn-primary btn-lg mt-3">Loslegen</button>
   </div>
 
   <!-- Features -->
@@ -12,9 +11,9 @@
     <div class="col-md-4">
       <div class="card h-100 shadow-sm">
         <div class="card-body">
-          <h5 class="card-title">📊 Heatmaps</h5>
-          <p class="card-text text-muted">Erstelle visuelle Übersichten deiner Sensordaten, um Muster schnell zu erkennen.</p>
-          <a routerLink="/heatmap" class="btn btn-outline-primary">Ansehen</a>
+          <h5 class="card-title">📊 Heatmap</h5>
+          <p class="card-text text-muted">3D-Darstellung der Sensordaten im Heatmapformat </p>
+          <a routerLink="/heatmap" class="btn btn-outline-primary">Zur Heatmap</a>
         </div>
       </div>
     </div>
@@ -22,8 +21,8 @@
       <div class="card h-100 shadow-sm">
         <div class="card-body">
           <h5 class="card-title">🛰️ 2D Sensoren</h5>
-          <p class="card-text text-muted">Verwalte und analysiere deine 2D-Sensoren mit interaktiven Tools.</p>
-          <a routerLink="/zweid" class="btn btn-outline-primary">Öffnen</a>
+          <p class="card-text text-muted">Übersicht der erfassten Daten pro einzelnem Sensor</p>
+          <a routerLink="/zweid" class="btn btn-outline-primary">Zur Übersicht</a>
         </div>
       </div>
     </div>
@@ -31,16 +30,40 @@
       <div class="card h-100 shadow-sm">
         <div class="card-body">
           <h5 class="card-title">⚙️ Admin</h5>
-          <p class="card-text text-muted">Verwalte Benutzer, Daten und Systemeinstellungen mit nur wenigen Klicks.</p>
-          <a routerLink="/admin" class="btn btn-outline-primary">Verwalten</a>
+          <p class="card-text text-muted">Ansicht von DB, Datenarrays und NodeRed</p>
+          <a routerLink="/admin" class="btn btn-outline-primary">Zum Admin-Tab</a>
         </div>
+      </div>
+    </div>
+<!-- Zweite Reihe: GitHub und Doku -->
+<div class="row justify-content-center text-center g-4 mb-5">
+  <div class="col-md-4">
+    <div class="card h-100 shadow-sm">
+      <div class="card-body">
+        <h5 class="card-title">🐙 GitHub Repo</h5>
+        <p class="card-text text-muted">Hier findest du den Quellcode dieses Projekts auf GitHub.</p>
+        <a href="https://github.com/JD-GG/audiTim" target="_blank" class="btn btn-outline-primary">Zum GitHub</a>
       </div>
     </div>
   </div>
 
+  <div class="col-md-4">
+    <div class="card h-100 shadow-sm">
+      <div class="card-body">
+        <h5 class="card-title">📚 Dokumentation</h5>
+        <p class="card-text text-muted">Hier findest du die offizielle Dokumentation des Projekts.</p>
+        <a href="/doku" target="_blank" class="btn btn-outline-primary">Zur Doku</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+  </div>
+
   <!-- Info Section -->
   <div class="text-center">
-    <p class="text-muted">Dieses Tool ist Teil eines Studentenprojekts. Entwickelt mit ♥ in Angular & Bootstrap.</p>
+    <p class="text-muted">Dieses Tool ist Teil eines Studentenprojekts der DHBW Heidenheim.</p>
   </div>
 
 </div>
