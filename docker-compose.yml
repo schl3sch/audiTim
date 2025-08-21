@@ -64,6 +64,8 @@ services:
       - "8081"
     networks:
       - sensor-net
+    volumes:
+      - ./Documentation/ProjektSe/dokumentation.pdf:/usr/share/nginx/html/assets/dokumentation.pdf:ro
 
 volumes:
   influxdb_data:
