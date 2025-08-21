@@ -32,6 +32,7 @@
     "date-fns": "^4.1.0",
     "ng2-charts": "^8.0.0",
     "ngx-extended-pdf-viewer": "^25.0.0-alpha.2",
+    "node-fetch": "^2.7.0",
     "plotly.js-dist": "^3.0.3",
     "plotly.js-dist-min": "^3.0.3",
     "rxjs": "~7.8.0",

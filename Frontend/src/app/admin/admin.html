@@ -1,11 +1,45 @@
-<h1 class="mb-4">AudiTim</h1>
-<div class="card p-4 mb-4 shadow-sm">
-  <h2>Admin</h2>
-  <app-array-test></app-array-test>
+<h1 class="mb-4 text-center">AudiTim Admin</h1>
+
+<!-- Verlinkungen zu Node-RED und Influx -->
+<div class="row g-4 justify-content-center">
+  <div class="col-md-4">
+    <div class="card h-100 shadow-sm text-center">
+      <div class="card-body">
+        <h5 class="card-title">🔴 Node-RED</h5>
+          <p class="card-text text-muted">
+      Status: 
+      <span [ngClass]="{'text-success': nodeRedStatus, 'text-danger': nodeRedStatus === false}">
+        {{ nodeRedStatus === null ? '...prüfe' : (nodeRedStatus ? 'Online' : 'Offline') }}
+      </span>
+    </p>
+        <a href="http://localhost:1880" target="_blank" class="btn btn-outline-primary">Zu Node-RED</a>
+      </div>
+    </div>
+  </div>
+  
+  <div class="col-md-4">
+    <div class="card h-100 shadow-sm text-center">
+      <div class="card-body">
+        <h5 class="card-title">📈 InfluxDB</h5>
+            <p class="card-text text-muted">
+      Status: 
+      <span [ngClass]="{'text-success': influxStatus, 'text-danger': influxStatus === false}">
+        {{ influxStatus === null ? '...prüfe' : (influxStatus ? 'Online' : 'Offline') }}
+      </span>
+    </p>
+        <a href="http://localhost:8086/signin" target="_blank" class="btn btn-outline-primary">Zu InfluxDB</a>
+      </div>
+    </div>
+  </div>
 </div>
 
-<div class="text-center mb-4">
-  <button class="btn btn-primary" (click)="generateDummy()">Generate Dummy Data</button>
-</div>
 
-<pre *ngIf="textData()" class="bg-light p-3 rounded overflow-auto">{{ textData() | json }}</pre>
+<!-- Array-Test Karte -->
+<div class="d-flex justify-content-center">
+  <div class="card p-4 mb-4 shadow-sm" style="display: inline-block; width: auto;">
+    <h2 class="mb-3 text-center">Debug Funktion</h2>
+    <div class="overflow-auto" style="max-width:100%; max-height:400px;">
+      <app-array-test></app-array-test>
+    </div>
+  </div>
+</div>
