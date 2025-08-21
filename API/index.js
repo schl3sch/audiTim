@@ -39,24 +39,29 @@ queryApi.queryRows(`buckets()`, {
 app.get('/api/allsensors', async (req, res) => {
   const fluxQuery = `
     from(bucket: "${bucket}")
-      |> range(start: 0)
+      |> range(start: -30d)
       |> filter(fn: (r) => r._measurement == "sensor_data")
-      |> filter(fn: (r) => r._field == "decibel")
-      |> group(columns: ["sensor_id"])
-      |> sort(columns: ["_time"], desc: false)
+      |> group(columns: ["_field"])
+      |> sort(columns: ["_time"], desc: true)
+      |> limit(n:10)
   `;
 
   const result = {};
+
   try {
     for await (const { values, tableMeta } of queryApi.iterateRows(fluxQuery)) {
       const row = tableMeta.toObject(values);
-      const sid = row.sensor_id;
-      const decibel = Math.min(row._value, 3.5);
-      const time = row._time;
-      if (!result[sid]) result[sid] = [];
-      result[sid].push({ time, decibel });
-    }
 
+      // _field enthält bei dir den Sensor-Namen
+      const sensor = row._field ?? "unknown";  
+
+      // _value enthält den eigentlichen Messwert
+      const value = Number(row._value);  
+      const time = row._time;
+
+      if (!result[sensor]) result[sensor] = [];
+      result[sensor].push({ time, value });
+    }
     res.json(result);
   } catch (err) {
     console.error('❌ Query failed:', err);
@@ -70,26 +75,151 @@ app.get('/api/newsensors', async (req, res) => {
     from(bucket: "${bucket}")
       |> range(start: -30d)
       |> filter(fn: (r) => r._measurement == "sensor_data")
-      |> filter(fn: (r) => r._field == "decibel")
-      |> group(columns: ["sensor_id"])
+      |> group(columns: ["_field"])
       |> sort(columns: ["_time"], desc: true)
-      |> limit(n: 5)
+      |> limit(n:5)
   `;
 
   const result = {};
+
   try {
     for await (const { values, tableMeta } of queryApi.iterateRows(fluxQuery)) {
       const row = tableMeta.toObject(values);
-      const sid = row.sensor_id;
-      const decibel = Math.min(row._value, 3.5);
+
+      // _field enthält bei dir den Sensor-Namen
+      const sensor = row._field ?? "unknown";  
+
+      // _value enthält den eigentlichen Messwert
+      const value = Number(row._value);  
       const time = row._time;
-      if (!result[sid]) result[sid] = [];
-      result[sid].push({ time, decibel });
+
+      if (!result[sensor]) result[sensor] = [];
+      result[sensor].push({ time, value });
     }
     res.json(result);
   } catch (err) {
     console.error('❌ Query failed:', err);
     res.status(500).send('Query failed');
+  }
+});
+
+//  Ältester & neuster Timestamp pro Sensor
+app.get('/api/sensorRange', async (req, res) => {
+  const fluxQueryOldest = `
+    from(bucket: "${bucket}")
+      |> range(start: 0)
+      |> filter(fn: (r) => r._measurement == "sensor_data")
+      |> group(columns: ["_field"])
+      |> sort(columns: ["_time"], desc: false)
+      |> limit(n:1)
+  `;
+
+  const fluxQueryNewest = `
+    from(bucket: "${bucket}")
+      |> range(start: 0)
+      |> filter(fn: (r) => r._measurement == "sensor_data")
+      |> group(columns: ["_field"])
+      |> sort(columns: ["_time"], desc: true)
+      |> limit(n:1)
+  `;
+
+  try {
+    const oldest = {};
+    const newest = {};
+
+    // Ältester Timestamp pro Sensor
+    for await (const { values, tableMeta } of queryApi.iterateRows(fluxQueryOldest)) {
+      const row = tableMeta.toObject(values);
+      const sensor = row._field ?? "unknown";
+      oldest[sensor] = row._time;
+    }
+
+    // Neuster Timestamp pro Sensor
+    for await (const { values, tableMeta } of queryApi.iterateRows(fluxQueryNewest)) {
+      const row = tableMeta.toObject(values);
+      const sensor = row._field ?? "unknown";
+      newest[sensor] = row._time;
+    }
+
+    res.json({ oldest, newest });
+  } catch (err) {
+    console.error('❌ Query failed:', err);
+    res.status(500).json({ error: 'Error querying InfluxDB' });
+  }
+});
+
+// Werte für Zeitraum abfragen
+app.post('/api/sensorRange', async (req, res) => {
+  const { start, stop } = req.body;
+  if (!start || !stop) return res.status(400).json({ error: "Bitte start und stop im Body als Timestamps angeben" });
+
+  const fluxQuery = `
+    from(bucket: "${bucket}")
+      |> range(start: ${start}, stop: ${stop})
+      |> filter(fn: (r) => r._measurement == "sensor_data")
+      |> group(columns: ["_field"])
+      |> sort(columns: ["_time"], desc: true)
+  `;
+
+  const result = {};
+
+  try {
+    for await (const { values, tableMeta } of queryApi.iterateRows(fluxQuery)) {
+      const row = tableMeta.toObject(values);
+      const sensor = row._field ?? "unknown";
+      const value = Number(row._value);
+      const time = row._time;
+
+      if (!result[sensor]) result[sensor] = [];
+      result[sensor].push({ time, value });
+    }
+
+    res.json({ data: result });
+  } catch (err) {
+    console.error('❌ Query failed:', err);
+    res.status(500).json({ error: 'Error querying InfluxDB' });
+  }
+});
+
+// Neuestes Heatmap-Array abfragen (GET)
+app.get("/api/getArray", async (req, res) => {
+  const fluxQuery = `
+    from(bucket: "${bucket}")
+      |> range(start: -30d) // oder -inf, falls du ALLE Zeiten willst
+      |> filter(fn: (r) => r._measurement == "heatmap_arr")
+      |> filter(fn: (r) => r._field == "base64")
+      |> sort(columns: ["_time"], desc: true)
+      |> limit(n: 1)
+  `;
+
+  try {
+    let latest = null;
+
+    for await (const { values, tableMeta } of queryApi.iterateRows(fluxQuery)) {
+      const obj = tableMeta.toObject(values);
+
+      const buffer = Buffer.from(obj._value, "base64");
+      const arr = Array.from(new Uint8Array(buffer));
+
+      const grid = [];
+      for (let i = 0; i < 10; i++) {
+        grid.push(arr.slice(i * 10, (i + 1) * 10));
+      }
+
+      latest = {
+        time: obj._time,
+        grid
+      };
+    }
+
+    if (!latest) {
+      return res.status(404).json({ error: "Kein Array gefunden" });
+    }
+
+    res.json({ data: latest });
+  } catch (error) {
+    console.error("Influx query error:", error.message);
+    res.status(500).json({ error: "Error querying InfluxDB" });
   }
 });
 

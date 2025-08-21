@@ -17,7 +17,7 @@ Chart.register(
   templateUrl: './sensor-chart.html'
 })
 export class SensorChartComponent implements OnChanges {
-  @Input() sensorResponse!: Record<string, { time: string; decibel: number }[]>;
+  @Input() sensorResponse!: Record<string, { time: string; value: number }[]>;
 
   chartData!: ChartConfiguration<'line'>['data'];
   chartOptions: ChartConfiguration<'line'>['options'] = {
@@ -30,7 +30,7 @@ export class SensorChartComponent implements OnChanges {
       },
       y: {
         beginAtZero: true,
-        title: { display: true, text: 'Decibel' }
+        title: { display: true, text: 'Value' }
       }
     },
     plugins: { legend: { display: true } }
@@ -55,7 +55,7 @@ export class SensorChartComponent implements OnChanges {
     this.chartData = {
       datasets: Object.entries(this.sensorResponse).map(([sensor, values]) => ({
         label: sensor,
-        data: values.map(v => ({ x: new Date(v.time).getTime(), y: v.decibel })),
+        data: values.map(v => ({ x: new Date(v.time).getTime(), y: v.value })),
         fill: false,
         borderColor: this.colorMap.get(sensor) ?? '#000000', // fallback black
         backgroundColor: this.colorMap.get(sensor) ?? '#000000', // point color
