@@ -2,6 +2,7 @@ require('dotenv').config();
 const fs = require('fs');
 const express = require('express');
 const { InfluxDB, Point } = require('@influxdata/influxdb-client');
+const fetch = require('node-fetch'); // npm install node-fetch@2 falls noch nicht installiert
 
 const app = express();
 const PORT = 3000;
@@ -299,6 +300,28 @@ app.post("/api/postHeatmapsRange", async (req, res) => {
     console.error("Influx query error:", error.message);
     res.status(500).json({ error: "Error querying InfluxDB" });
   }
+});
+// API Node Red und InfluxDB Status
+app.get('/api/status', async (req, res) => {
+  const results = { nodeRed: false, influx: false };
+
+  // Node-RED check
+  try {
+    const nr = await fetch('http://nodered:1880', { method: 'GET' });
+    results.nodeRed = nr.ok;
+  } catch {
+    results.nodeRed = false;
+  }
+
+  // Influx check
+  try {
+    const influxCheck = await fetch('http://influxdb:8086', { method: 'GET' });
+    results.influx = influxCheck.ok;
+  } catch {
+    results.influx = false;
+  }
+
+  res.json(results);
 });
 
 // API Heatmap dekosierungs test
