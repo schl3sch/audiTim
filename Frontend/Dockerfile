@@ -6,7 +6,7 @@ RUN npm install
 
 # Copy Documentation PDF to assets
 RUN mkdir -p src/assets
-COPY ../Doc/Project/dokumentation.pdf src/assets/dokumentation.pdf
+COPY ../Documentation/ProjektSe/dokumentation.pdf src/assets/dokumentation.pdf
 
 COPY . .
 RUN npm run build
