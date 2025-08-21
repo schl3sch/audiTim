@@ -7,52 +7,11 @@
   </p>
 </div>
 
-<!-- Zeitbereich Auswahl -->
-<div class="card mb-4 shadow-sm p-4">
-  <div class="row g-3 align-items-center">
-    <!-- Dropdown für vordefinierte Ranges -->
-    <div class="col-auto">
-      <label for="presetRange" class="form-label">Zeitraum wählen:</label>
-      <select id="presetRange" [(ngModel)]="selectedRange" (change)="onPresetRangeChange()" class="form-select">
-        <option value="" disabled selected>Zeitraum wählen...</option>
-        <option value="1h">Letzte Stunde</option>
-        <option value="24h">Letzte 24h</option>
-        <option value="7d">Letzte 7 Tage</option>
-        <option value="Mathe1">Mathe Vorlesung 18.08.2025</option>
-        <option value="custom">Benutzerdefiniert</option>
-      </select>
-    </div>
-
-    <!-- Custom Range Auswahl -->
-    <div *ngIf="selectedRange === 'custom'" class="col-auto">
-      <div class="row g-2 align-items-center">
-        <div class="col-auto">
-          <label class="form-label">Von:</label>
-          <input
-            type="datetime-local"
-            [(ngModel)]="customStart"
-            [min]="availableStart | date:'yyyy-MM-ddTHH:mm'"
-            [max]="availableStop | date:'yyyy-MM-ddTHH:mm'"
-            class="form-control"
-          >
-        </div>
-        <div class="col-auto">
-          <label class="form-label">Bis:</label>
-          <input
-            type="datetime-local"
-            [(ngModel)]="customStop"
-            [min]="availableStart | date:'yyyy-MM-ddTHH:mm'"
-            [max]="availableStop | date:'yyyy-MM-ddTHH:mm'"
-            class="form-control"
-          >
-        </div>
-        <div class="col-auto mt-4">
-          <button (click)="loadCustomRange()" class="btn btn-primary">Laden</button>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
+<app-range-selector 
+  [availableStart]="availableStart" 
+  [availableStop]="availableStop"
+  (rangeChange)="onRangeChange($event)">
+</app-range-selector>
 
 <!-- Slider mit Play-Button -->
 <div class="card mb-4 shadow-sm p-4">

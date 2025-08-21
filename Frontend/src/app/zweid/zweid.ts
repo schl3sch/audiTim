@@ -1,34 +1,44 @@
-import { Component, signal } from '@angular/core';
+import { Component, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { SensorChartComponent } from '../sensor-chart/sensor-chart';
 import { Sensor } from '../sensor.service';
+import { RangeSelector } from '../range-selector/range-selector';
 
 @Component({
   selector: 'app-zweid',
   standalone: true,
-  imports: [CommonModule, SensorChartComponent],
+  imports: [CommonModule, SensorChartComponent, RangeSelector],
   templateUrl: './zweid.html',
 })
-export class Zweid {
-  chartData = signal<any>(null);
-  textData = signal<any>(null); // optional, falls Text angezeigt wird
-  reloadHeatmap = signal(false); // optional, falls Heatmap neu geladen werden soll
-
+export class Zweid implements OnInit {
   constructor(private sensor: Sensor) {}
 
-  loadAllSensors() {
-    this.sensor.getAllSensors().subscribe(res => {
-      this.chartData.set(res);
-      this.textData.set(null);      // Text ausblenden
-      this.reloadHeatmap.set(true); // Heatmap ggf. neu laden
+  chartData = signal<any>(null);
+
+  availableStart: string | null = null;
+  availableStop: string | null = null;
+
+  ngOnInit(): void {
+    this.loadSensorRange();
+  }
+
+  // Ältester & neuster Timestamp pro Sensor laden
+  loadSensorRange(): void {
+    this.sensor.getSensorRange().subscribe({
+      next: (range) => {
+        this.availableStart = range.oldest;
+        this.availableStop = range.newest;
+        console.log('Sensor Range:', range);
+      },
+      error: (err) => console.error('Fehler beim Laden der Sensor-Range:', err)
     });
   }
 
-  loadNewSensors() {
-    this.sensor.getNewSensors().subscribe(res => {
-      this.chartData.set(res);
-      this.textData.set(null);      // Text ausblenden
-      this.reloadHeatmap.set(true); // Heatmap ggf. neu laden
+  // Werte für ausgewählten Zeitraum laden
+  loadSensorData(start: string | number, stop: string | number): void {
+    this.sensor.getSensorData(start, stop).subscribe({
+      next: (data) => this.chartData.set(data),
+      error: (err) => console.error('Fehler beim Laden der Sensordaten:', err)
     });
   }
 }

@@ -22,18 +22,20 @@ export class Sensor {
     return this.http.get(`${this.baseUrl}/newsensors`);
   }
 
-  generateDummyData(): Observable<any> {
-    return this.http.get(`${this.baseUrl}/generate`);
+  // Ältester & neuster Timestamp pro Sensor
+  getSensorRange(): Observable<{ oldest: string; newest: string }> {
+  return this.http.get<{ oldest: string; newest: string }>(`${this.baseUrl}/sensorRange`);
+  }
+
+  // Werte für Zeitraum abfragen
+  getSensorData(start: string | number, stop: string | number): Observable<Record<string,{time:string,value:number}[]>> {
+    return this.http.post<Record<string,{time:string,value:number}[]>>(`${this.baseUrl}/sensorRange`, { start, stop });
   }
 
   getHeatmapArray(): Observable<{ data: { time: string; grid: number[][] } }> {
     return this.http.get<{ data: { time: string; grid: number[][] } }>(
       `${this.baseUrl}/getArray`
     );
-  }
-
-  getHeatmapArrays(): Observable<{ frames: number[][][] }> {
-    return this.http.get<{ frames: number[][][] }>(`${this.baseUrl}/getArrays`);
   }
 
   getHeatmaps(): Observable<{ data: HeatmapFrame[] }> {

@@ -109,7 +109,6 @@ app.get('/api/sensorRange', async (req, res) => {
     from(bucket: "${bucket}")
       |> range(start: 0)
       |> filter(fn: (r) => r._measurement == "sensor_data")
-      |> group(columns: ["_field"])
       |> sort(columns: ["_time"], desc: false)
       |> limit(n:1)
   `;
@@ -118,27 +117,21 @@ app.get('/api/sensorRange', async (req, res) => {
     from(bucket: "${bucket}")
       |> range(start: 0)
       |> filter(fn: (r) => r._measurement == "sensor_data")
-      |> group(columns: ["_field"])
       |> sort(columns: ["_time"], desc: true)
       |> limit(n:1)
   `;
 
   try {
-    const oldest = {};
-    const newest = {};
+    let oldest, newest;
 
-    // Ältester Timestamp pro Sensor
     for await (const { values, tableMeta } of queryApi.iterateRows(fluxQueryOldest)) {
       const row = tableMeta.toObject(values);
-      const sensor = row._field ?? "unknown";
-      oldest[sensor] = row._time;
+      oldest = row._time;
     }
 
-    // Neuster Timestamp pro Sensor
     for await (const { values, tableMeta } of queryApi.iterateRows(fluxQueryNewest)) {
       const row = tableMeta.toObject(values);
-      const sensor = row._field ?? "unknown";
-      newest[sensor] = row._time;
+      newest = row._time;
     }
 
     res.json({ oldest, newest });
