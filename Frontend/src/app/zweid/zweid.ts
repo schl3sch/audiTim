@@ -28,28 +28,6 @@ export class Zweid implements OnInit {
       next: (range) => {
         this.availableStart = range.oldest;
         this.availableStop = range.newest;
-        
-        // Chart vorbereiten: für jeden Sensor ein Array mit Platzhaltern
-        const sensorResponse: Record<string, { time: string; value: number }[]> = {
-          sensor1: [
-            { time: range.oldest, value: 0 },
-            { time: range.newest, value: 0 }
-          ],
-          sensor2: [
-            { time: range.oldest, value: 0 },
-            { time: range.newest, value: 0 }
-          ],
-          sensor3: [
-            { time: range.oldest, value: 0 },
-            { time: range.newest, value: 0 }
-          ],
-          sensor4: [
-            { time: range.oldest, value: 0 },
-            { time: range.newest, value: 0 }
-          ]
-        };
-
-        this.chartData.set(sensorResponse);
         console.log('Sensor Range:', range);
       },
       error: (err) => console.error('Fehler beim Laden der Sensor-Range:', err)
@@ -58,8 +36,12 @@ export class Zweid implements OnInit {
 
   // Werte für ausgewählten Zeitraum laden
   loadSensorData(start: string | number, stop: string | number): void {
+    console.log('Load Sensor Data:', start, stop);
     this.sensor.getSensorData(start, stop).subscribe({
-      next: (data) => this.chartData.set(data),
+      next: (resp) => {
+        console.log('Sensor Data:', resp);
+        this.chartData.set(resp['data']);
+      },
       error: (err) => console.error('Fehler beim Laden der Sensordaten:', err)
     });
   }

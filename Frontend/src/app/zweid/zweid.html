@@ -1,10 +1,11 @@
 <h1 class="mb-4">AudiTim</h1>
 <div class="card p-4 mb-4 shadow-sm">
   <h2>2D Sensoren</h2>
-  <p *ngIf="availableStart && availableStop">
-    Daten verfügbar von <strong>{{ availableStart | date:'short' }}</strong> bis 
-    <strong>{{ availableStop | date:'short' }}</strong>
-  </p>
+    <p *ngIf="availableStart && availableStop">
+      Daten verfügbar von 
+      <strong>{{ availableStart | date:'dd.MM.yyyy, HH:mm:ss' }}</strong> bis 
+      <strong>{{ availableStop | date:'dd.MM.yyyy, HH:mm:ss' }}</strong>
+    </p>
 </div>
 
 <app-range-selector
@@ -14,3 +15,4 @@
 </app-range-selector>
 
 <app-sensor-chart *ngIf="chartData()" [sensorResponse]="chartData()"></app-sensor-chart>
+

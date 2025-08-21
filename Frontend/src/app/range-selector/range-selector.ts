@@ -24,6 +24,9 @@ export class RangeSelector {
       let now = new Date();
       let start: Date;
       switch (this.selectedRange) {
+        case '1m':
+          start = new Date(now.getTime() - 1000 * 60);
+          break;
         case '1h':
           start = new Date(now.getTime() - 1000 * 60 * 60);
           break;
@@ -42,7 +45,12 @@ export class RangeSelector {
 
   loadCustomRange(): void {
     if (this.customStart && this.customStop) {
-      this.rangeChange.emit({ start: this.customStart, stop: this.customStop });
+      const startDate = new Date(this.customStart);
+      const stopDate = new Date(this.customStop);
+      this.rangeChange.emit({
+        start: startDate.toISOString(),
+        stop: stopDate.toISOString()
+      });
     }
   }
 }

@@ -35,74 +35,6 @@ queryApi.queryRows(`buckets()`, {
   },
 });
 
-// Read all sensor values
-app.get('/api/allsensors', async (req, res) => {
-  const fluxQuery = `
-    from(bucket: "${bucket}")
-      |> range(start: -30d)
-      |> filter(fn: (r) => r._measurement == "sensor_data")
-      |> group(columns: ["_field"])
-      |> sort(columns: ["_time"], desc: true)
-      |> limit(n:10)
-  `;
-
-  const result = {};
-
-  try {
-    for await (const { values, tableMeta } of queryApi.iterateRows(fluxQuery)) {
-      const row = tableMeta.toObject(values);
-
-      // _field enthält bei dir den Sensor-Namen
-      const sensor = row._field ?? "unknown";  
-
-      // _value enthält den eigentlichen Messwert
-      const value = Number(row._value);  
-      const time = row._time;
-
-      if (!result[sensor]) result[sensor] = [];
-      result[sensor].push({ time, value });
-    }
-    res.json(result);
-  } catch (err) {
-    console.error('❌ Query failed:', err);
-    res.status(500).send('Query failed');
-  }
-});
-
-// Read latest sensor values (5 per sensor)
-app.get('/api/newsensors', async (req, res) => {
-  const fluxQuery = `
-    from(bucket: "${bucket}")
-      |> range(start: -30d)
-      |> filter(fn: (r) => r._measurement == "sensor_data")
-      |> group(columns: ["_field"])
-      |> sort(columns: ["_time"], desc: true)
-      |> limit(n:5)
-  `;
-
-  const result = {};
-
-  try {
-    for await (const { values, tableMeta } of queryApi.iterateRows(fluxQuery)) {
-      const row = tableMeta.toObject(values);
-
-      // _field enthält bei dir den Sensor-Namen
-      const sensor = row._field ?? "unknown";  
-
-      // _value enthält den eigentlichen Messwert
-      const value = Number(row._value);  
-      const time = row._time;
-
-      if (!result[sensor]) result[sensor] = [];
-      result[sensor].push({ time, value });
-    }
-    res.json(result);
-  } catch (err) {
-    console.error('❌ Query failed:', err);
-    res.status(500).send('Query failed');
-  }
-});
-
 //  Ältester & neuster Timestamp pro Sensor
 app.get('/api/sensorRange', async (req, res) => {
   const fluxQueryOldest = `
@@ -167,7 +99,20 @@ app.post('/api/sensorRange', async (req, res) => {
       result[sensor].push({ time, value });
     }
 
-    res.json({ data: result });
+    // Durchschnitt pro 10 Werte berechnen
+    const reducedResult = {};
+    for (const sensor in result) {
+      reducedResult[sensor] = [];
+      const valuesArray = result[sensor];
+      for (let i = 0; i < valuesArray.length; i += 10) {
+        const chunk = valuesArray.slice(i, i + 10);
+        const avgValue = chunk.reduce((sum, v) => sum + v.value, 0) / chunk.length;
+        const time = chunk[Math.floor(chunk.length / 2)].time; // mittlerer Timestamp
+        reducedResult[sensor].push({ time, value: avgValue });
+      }
+    }
+
+    res.json({ data: reducedResult });
   } catch (err) {
     console.error('❌ Query failed:', err);
     res.status(500).json({ error: 'Error querying InfluxDB' });
