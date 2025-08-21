@@ -52,4 +52,9 @@ export class Sensor {
   getHeatmapRange(): Observable<{ oldest: string; newest: string }> {
   return this.http.get<{ oldest: string; newest: string }>(`${this.baseUrl}/getHeatmapRange`);
   }
+
+  getStatus(): Observable<any> {
+    return this.http.get(`${this.baseUrl}/status`);
+  }
 }
+
