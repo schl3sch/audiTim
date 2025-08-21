@@ -1,11 +1,28 @@
 <h1 class="mb-4">AudiTim</h1>
 <div class="card p-4 mb-4 shadow-sm">
   <h2>2D Sensoren</h2>
+  
+  <div class="d-flex justify-content-between align-items-center">
+    <p *ngIf="availableStart && availableStop" class="mb-0">
+      Daten verfügbar von 
+      <strong>{{ availableStart | date:'dd.MM.yyyy, HH:mm:ss' }}</strong> bis 
+      <strong>{{ availableStop | date:'dd.MM.yyyy, HH:mm:ss' }}</strong>
+    </p>
+
+    <button 
+      (click)="toggleLive()" 
+      class="btn btn-sm"
+      [ngClass]="live ? 'btn-primary' : 'btn-secondary'">
+      {{ live ? 'Stop Live' : 'Start Live' }}
+    </button>
+  </div>
 </div>
 
-<div class="text-center mb-4">
-  <button class="btn btn-primary me-2" (click)="loadAllSensors()">Load All Sensors</button>
-  <button class="btn btn-secondary" (click)="loadNewSensors()">Load New Sensors</button>
-</div>
+<app-range-selector
+  *ngIf="!live"
+  [availableStart]="availableStart"
+  [availableStop]="availableStop"
+  (rangeChange)="loadSensorData($event.start!, $event.stop!)">
+</app-range-selector>
 
 <app-sensor-chart *ngIf="chartData()" [sensorResponse]="chartData()"></app-sensor-chart>

@@ -21,7 +21,7 @@ export class ArrayTestComponent {
     this.error = '';
     this.sensor.getHeatmapArray().subscribe({
       next: (res) => {
-        this.heatmap = res.heatmap;
+        this.heatmap = res.data.grid; // <-- jetzt passt es
         this.loading = false;
       },
       error: (err) => {

@@ -3,21 +3,22 @@ import { Sensor, HeatmapFrame } from '../sensor.service';
 import Plotly from 'plotly.js-dist-min';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
+import { RangeSelector } from '../range-selector/range-selector';
 
 @Component({
   selector: 'app-heatmap',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RangeSelector],
   templateUrl: './heatmap.html',
   styleUrls: ['./heatmap.scss']
 })
-export class Heatmap implements AfterViewInit, OnInit  {
+export class Heatmap implements AfterViewInit, OnInit {
   frames: HeatmapFrame[] = [];
-  currentFrameIndex: number = 0;
+  currentFrameIndex = 0;
 
-  selectedRange: string = '';   // Dropdown Auswahl
-  customStart: string = '';     // Benutzerdefiniert Start
-  customStop: string = '';      // Benutzerdefiniert Stop
+  selectedRange = '';   // Dropdown Auswahl
+  customStart = '';     // Benutzerdefiniert Start
+  customStop = '';      // Benutzerdefiniert Stop
 
   availableStart: string | null = null;
   availableStop: string | null = null;
@@ -32,15 +33,30 @@ export class Heatmap implements AfterViewInit, OnInit  {
     this.loadHeatmapFrames(); // Default (z.B. letzte Stunde)
   }
 
+  onRangeChange(range: { start?: string; stop?: string }) {
+    let request$;
+    // Sensor-Service nur, wenn implementiert
+    request$ = this.sensor.postHeatmapsRange(range.start!, range.stop!);
+
+    request$.subscribe({
+      next: (res) => {
+        this.frames = res.data;
+        this.currentFrameIndex = 0;
+        if (this.frames.length > 0) {
+          this.updatePlot(this.frames[this.currentFrameIndex].grid);
+        }
+      },
+      error: (err) => console.error(err)
+    });
+  }
+
   loadAvailableRange(): void {
     this.sensor.getHeatmapRange().subscribe({
       next: (range) => {
         this.availableStart = range.oldest;
         this.availableStop = range.newest;
       },
-      error: (err) => {
-        console.error("❌ Fehler beim Laden der Range:", err);
-      }
+      error: (err) => console.error('❌ Fehler beim Laden der Range:', err)
     });
   }
 
@@ -48,10 +64,8 @@ export class Heatmap implements AfterViewInit, OnInit  {
     let request$;
 
     if (range?.start && range?.stop) {
-      // POST mit custom Range
       request$ = this.sensor.postHeatmapsRange(range.start, range.stop);
     } else {
-      // Default GET
       request$ = this.sensor.getHeatmaps();
     }
 
@@ -63,9 +77,7 @@ export class Heatmap implements AfterViewInit, OnInit  {
           this.updatePlot(this.frames[this.currentFrameIndex].grid);
         }
       },
-      error: (err) => {
-        console.error('Fehler beim Laden der Heatmap-Frames:', err);
-      }
+      error: (err) => console.error('Fehler beim Laden der Heatmap-Frames:', err)
     });
   }
 
@@ -93,7 +105,7 @@ export class Heatmap implements AfterViewInit, OnInit  {
       ],
       {
         title: { 
-          text: `3D Heatmap – Frame ${this.currentFrameIndex + 1} (${this.frames[this.currentFrameIndex].time})` 
+          text: `3D Heatmap – Frame ${this.currentFrameIndex + 1} (${this.frames[this.currentFrameIndex]?.time})` 
         },
         autosize: true,
         scene: {
@@ -108,58 +120,7 @@ export class Heatmap implements AfterViewInit, OnInit  {
       { displayModeBar: false }
     );
   }
-
-  onPresetRangeChange(): void {
-    if (this.selectedRange === 'custom') return;
-
-    const now = new Date();
-    let start: Date;
-    let stop: Date;
-
-    switch (this.selectedRange) {
-      case '1h':
-        start = new Date(now.getTime() - 1 * 60 * 60 * 1000);
-        stop = now;
-        break;
-      case '24h':
-        start = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-        stop = now;
-        break;
-      case '7d':
-        start = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-        stop = now;
-        break;
-      case 'Mathe1': 
-        start = new Date('2025-08-18T08:00:00Z');
-        stop = new Date('2025-08-18T10:00:00Z');
-        break;
-      default:
-        return;
-    }
-
-    this.loadHeatmapFrames({
-      start: start.toISOString(),
-      stop: stop.toISOString(),
-    });
-  }
-
-  loadCustomRange(): void {
-    if (!this.customStart || !this.customStop) return;
-
-    // Prüfen, dass Start vor Stop liegt
-    const start = new Date(this.customStart);
-    const stop = new Date(this.customStop);
-    if (start >= stop) {
-      alert('Start muss vor Stop liegen!');
-      return;
-    }
-
-    this.loadHeatmapFrames({
-      start: start.toISOString(),
-      stop: stop.toISOString(),
-    });
-  }
-
+  
   isPlaying = false;
   playSpeed = 200; // Millisekunden pro Frame
   playInterval: any;
