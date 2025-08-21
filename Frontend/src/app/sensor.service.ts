@@ -32,6 +32,10 @@ export class Sensor {
     return this.http.post<Record<string,{time:string,value:number}[]>>(`${this.baseUrl}/sensorRange`, { start, stop });
   }
 
+  getLiveSensorData(): Observable<Record<string, {time:string,value:number}[]>> {
+    return this.http.get<Record<string, {time:string,value:number}[]>>(`${this.baseUrl}/sensorLive`);
+  }
+
   getHeatmapArray(): Observable<{ data: { time: string; grid: number[][] } }> {
     return this.http.get<{ data: { time: string; grid: number[][] } }>(
       `${this.baseUrl}/getArray`

@@ -120,6 +120,40 @@ app.post('/api/sensorRange', async (req, res) => {
   }
 });
 
+// server.ts / app.post
+app.get('/api/sensorLive', async (req, res) => {
+  const now = new Date();
+  const oneMinuteAgo = new Date(now.getTime() - 60 * 1000);
+
+  const fluxQuery = `
+    from(bucket: "${bucket}")
+      |> range(start: ${oneMinuteAgo.toISOString()}, stop: ${now.toISOString()})
+      |> filter(fn: (r) => r._measurement == "sensor_data")
+      |> group(columns: ["_field"])
+      |> aggregateWindow(every: 1s, fn: mean, createEmpty: false)
+      |> sort(columns: ["_time"])
+  `;
+
+  const result = {};
+
+  try {
+    for await (const { values, tableMeta } of queryApi.iterateRows(fluxQuery)) {
+      const row = tableMeta.toObject(values);
+      const sensor = row._field ?? "unknown";
+      const value = Number(row._value);
+      const time = row._time;
+
+      if (!result[sensor]) result[sensor] = [];
+      result[sensor].push({ time, value });
+    }
+
+    res.json({ data: result });
+  } catch (err) {
+    console.error('❌ Query failed:', err);
+    res.status(500).json({ error: 'Error querying InfluxDB' });
+  }
+});
+
 // Neuestes Heatmap-Array abfragen (GET)
 app.get("/api/getArray", async (req, res) => {
   const fluxQuery = `

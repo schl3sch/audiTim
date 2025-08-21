@@ -45,4 +45,35 @@ export class Zweid implements OnInit {
       error: (err) => console.error('Fehler beim Laden der Sensordaten:', err)
     });
   }
+
+  live = false;
+  private liveInterval?: any;
+
+  toggleLive(): void {
+    this.live = !this.live;
+    if (this.live) {
+      this.startLive();
+    } else {
+      this.stopLive();
+    }
+  }
+
+  private startLive(): void {
+    // Range-Selector deaktivieren, ggf. Flag setzen
+    this.loadLiveData(); // sofort laden
+    this.liveInterval = setInterval(() => this.loadLiveData(), 1000); // jede Sekunde
+  }
+
+  private stopLive(): void {
+    clearInterval(this.liveInterval);
+    this.liveInterval = undefined;
+    // Range-Selector wieder aktivieren
+  }
+
+  private loadLiveData(): void {
+    this.sensor.getLiveSensorData().subscribe({
+      next: (resp) => this.chartData.set(resp['data']),
+      error: (err) => console.error('Fehler beim Laden der Live-Daten:', err)
+    });
+  }
 }
