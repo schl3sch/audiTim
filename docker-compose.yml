@@ -16,6 +16,7 @@ services:
       - INFLUX_BUCKET=${INFLUX_BUCKET}
     networks:
       - sensor-net
+    image: api:
 
   influxdb:
     image: influxdb:2.7
@@ -44,8 +45,6 @@ services:
     container_name: nodered
     ports:
       - "1880:1880"
-    volumes:
-      - nodered_data:/data
     environment:
       - TZ=Europe/Berlin
     networks:
