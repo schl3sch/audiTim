@@ -13,6 +13,7 @@
 #include <WiFi.h> // Is installed automatically. Don't install additional libs
 #include <ArduinoMqttClient.h> // Has to be installed manually
 #include <esp_now.h>
+#include <esp_wifi.h>
 #include "../arduino_secrets.h" // Local file with secrets
 #include "time.h" // For Timestamps NTP
 #include <ArduinoJson.h> // For MQTT Json
@@ -83,7 +84,7 @@ void setup() {
 
 void loop() {
   for (int i = 0; i < 4; i++){
-    collectEsp[i][countEspTicks] = 5000;
+    collectEsp[i][countEspTicks] = 0;
   }
   unsigned long startProbeMillis = millis(); // Each measure and sending cycle will take exactly 100ms
 
