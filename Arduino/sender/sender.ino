@@ -18,10 +18,10 @@
 // ESP-2:         94:54:C5:E8:BC:40 -> DE:AD:C0:DE:00:02
 // ESP-3:         D4:8C:49:69:D5:74 -> DE:AD:C0:DE:00:03
 // ESP-4:         D4:8C:49:6A:EC:24 -> DE:AD:C0:DE:00:04
-// ESP-5: (Edge)  UNKNOWN           -> DE:AD:C0:DE:00:05
+// ESP-5: (Edge)  D4:8C:49:69:A2:F0 -> unchanged
 
 // Dependning on the builtin Mac a custom one is assigned
-uint8_t edgeDeviceMac[] = {0xDE, 0xAD, 0xC0, 0xDE, 0x00, 0x05};
+uint8_t edgeDeviceMac[] = {0xD4, 0x8C, 0x49, 0x69, 0xA2, 0xF0};
 uint8_t myMac[] = {0xDE, 0xAD, 0xC0, 0xDE, 0x00, 0x00}; // Will get changed based on the ESP; myMac[5] can be used as identifier
 
 const char ssid[] = SECRET_SSID;    // your network SSID
