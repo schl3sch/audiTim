@@ -280,6 +280,38 @@ app.post("/api/postHeatmapsRange", async (req, res) => {
     res.status(500).json({ error: "Error querying InfluxDB" });
   }
 });
+
+app.get("/api/getLiveHeatmap", async (req, res) => {
+  const now = new Date();
+  const twoSecAgo = new Date(now.getTime() - 2 * 1000);
+
+  const fluxQuery = `
+    from(bucket: "${bucket}")
+      |> range(start: ${twoSecAgo.toISOString()}, stop: ${now.toISOString()})
+      |> filter(fn: (r) => r._measurement == "heatmap_arr")
+      |> filter(fn: (r) => r._field == "base64")
+      |> sort(columns: ["_time"], desc: true)
+      |> limit(n: 1) // optional: direkt nur 1 Ergebnis
+  `;
+
+  try {
+    let latest = null;
+    for await (const { values, tableMeta } of queryApi.iterateRows(fluxQuery)) {
+      const obj = tableMeta.toObject(values);
+      const buffer = Buffer.from(obj._value, "base64");
+      const arr = Array.from(new Uint8Array(buffer));
+      const grid = [];
+      for (let i = 0; i < 10; i++) grid.push(arr.slice(i * 10, (i + 1) * 10));
+      latest = { time: obj._time, grid };
+      break; // nur den neuesten
+    }
+    res.json({ data: latest });
+  } catch (error) {
+    console.error("Influx query error:", error.message);
+    res.status(500).json({ error: "Error querying InfluxDB" });
+  }
+});
+
 // API Node Red und InfluxDB Status
 app.get('/api/status', async (req, res) => {
   const results = { nodeRed: false, influx: false };
