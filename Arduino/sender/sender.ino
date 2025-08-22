@@ -14,13 +14,14 @@
 // They only gather sound values and send them to the Edge-Device using ESP-Now
 
 // Mac-Adresses:
-// ESP-1 (Edge):  94:54:C5:E8:A5:DC -> Unchanged
+// ESP-1:         94:54:C5:E8:A5:DC -> DE:AD:C0:DE:00:01
 // ESP-2:         94:54:C5:E8:BC:40 -> DE:AD:C0:DE:00:02
 // ESP-3:         D4:8C:49:69:D5:74 -> DE:AD:C0:DE:00:03
 // ESP-4:         D4:8C:49:6A:EC:24 -> DE:AD:C0:DE:00:04
+// ESP-5: (Edge)  UNKNOWN           -> DE:AD:C0:DE:00:05
 
 // Dependning on the builtin Mac a custom one is assigned
-uint8_t edgeDeviceMac[] = {0x94, 0x54, 0xC5, 0xE8, 0xA5, 0xDC};
+uint8_t edgeDeviceMac[] = {0xDE, 0xAD, 0xC0, 0xDE, 0x00, 0x05};
 uint8_t myMac[] = {0xDE, 0xAD, 0xC0, 0xDE, 0x00, 0x00}; // Will get changed based on the ESP; myMac[5] can be used as identifier
 
 const char ssid[] = SECRET_SSID;    // your network SSID
@@ -37,14 +38,6 @@ struct_message myData; // Create a struct_message called myData
 unsigned long failedTransmissionCounter  = 0;
 
 void setup() {
-  Serial.begin(115200);
-
-  // INMP441 setup I2S
-  /*i2s_install();
-  i2s_setpin();
-  i2s_start(I2S_PORT);
-  delay(500);*/
-
   WiFi.mode(WIFI_STA);
   while (!(WiFi.STA.started())) {
     delay(100);
@@ -57,12 +50,6 @@ void setup() {
 void loop() {
   unsigned long startProbeMillis = millis(); // Each measure and sending cycle will take exactly 100ms
   uint16_t peakToPeak = probeMax4466();
-  /*Serial.print("Zero:0,Max:4095,Mic:");
-  Serial.print(peakToPeak);
-  Serial.print(",failed:");
-  Serial.print(failed);
-  Serial.print(",succes:");
-  Serial.println(succes);*/
 
   // Prepare ESP-NOW message
   myData.audio = peakToPeak;
@@ -76,8 +63,6 @@ void loop() {
   if(failedTransmissionCounter >= 10){
     findNewChannel();
   }
-
-  //inmpLoop();
 }
 
 // This function recognizes on wich ESP the code is being executed and changes MAC/Identifier accordingly
@@ -85,6 +70,9 @@ void setMac(){
   uint8_t originalMac[6];
   WiFi.macAddress(originalMac);
   switch(originalMac[5]){
+    case 0xDC:
+      myMac[5] = 0x01;
+      break;
     case 0x40:
       myMac[5] = 0x02;
       break;

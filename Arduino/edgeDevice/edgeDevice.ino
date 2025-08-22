@@ -14,11 +14,8 @@
 #include <ArduinoMqttClient.h> // Has to be installed manually
 #include <esp_now.h>
 #include "../arduino_secrets.h" // Local file with secrets
-#include "../probeMax.h" // Unified max4466 probe code
-//#include "../inmp441.h" // I2S Microphone
 #include "time.h" // For Timestamps NTP
 #include <ArduinoJson.h> // For MQTT Json
-//#include "esp_wpa2.h" // For PEAP StudentenWlan
 
 
 // This sketch is executed on the Edge-Device.
@@ -26,10 +23,11 @@
 // Sensor data is being captured locally but also received from the other ESPs over ESP-Now.
 
 // Mac-Adresses:
-// ESP-1 (Edge):  94:54:C5:E8:A5:DC -> Unchanged
+// ESP-1:         94:54:C5:E8:A5:DC -> DE:AD:C0:DE:00:01
 // ESP-2:         94:54:C5:E8:BC:40 -> DE:AD:C0:DE:00:02
 // ESP-3:         D4:8C:49:69:D5:74 -> DE:AD:C0:DE:00:03
 // ESP-4:         D4:8C:49:6A:EC:24 -> DE:AD:C0:DE:00:04
+// ESP-5: (Edge)  UNKNOWN           -> DE:AD:C0:DE:00:05
 
 const char ssid[] = SECRET_SSID;    // your network SSID
 const char pass[] = SECRET_PASS;    // your network password
@@ -47,7 +45,7 @@ unsigned long previousMillis = 0;
 unsigned long  count = 0;
 
 // ESP-Now
-uint8_t empfaengerMac[] = {0xDE, 0x8C, 0x49, 0x69, 0xD5, 0x74};
+const uint8_t myMac[] = {0xDE, 0xAD, 0xC0, 0xDE, 0x00, 0x05}; // Will get changed based on the ESP; myMac[5] can be used as identifier
 typedef struct struct_message {
   uint16_t audio; // 0-4095 Mic volume
 } struct_message; // Typedef
@@ -69,6 +67,9 @@ void setup() {
   Serial.begin(115200);
   delay(1000);
 
+  // Change local MAC-Adress
+  esp_wifi_set_mac(WIFI_IF_STA, myMac);
+
   // Connect to enterprise WiFi
   connectWPA2();
 
@@ -85,16 +86,6 @@ void loop() {
     collectEsp[i][countEspTicks] = 5000;
   }
   unsigned long startProbeMillis = millis(); // Each measure and sending cycle will take exactly 100ms
-  uint16_t peakToPeak = probeMax4466();
-
-  //Serial.println(peakToPeak);
-  Serial.print("Reference:");
-  Serial.print("4095");
-  
-  Serial.print(",Local:");
-  Serial.println(peakToPeak);
-
-  collectEsp[0][countEspTicks] = peakToPeak;
 
   // Non-blocking wait
   while((startProbeMillis + 100) > millis()){
