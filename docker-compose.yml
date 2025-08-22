@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   backend:
     build:
@@ -16,7 +14,7 @@ services:
       - INFLUX_BUCKET=${INFLUX_BUCKET}
     networks:
       - sensor-net
-    image: api:
+    image: api:v1
 
   influxdb:
     image: influxdb:2.7
