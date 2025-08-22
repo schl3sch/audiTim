@@ -63,6 +63,13 @@ export class Sensor {
   });
   }
   
+  postHeatmapAvg(start: string, stop: string): Observable<{ data: HeatmapFrame }> {
+  return this.http.post<{ data: HeatmapFrame }>(`${this.baseUrl}/postHeatmapAvg`, {
+    start,
+    stop,
+  });
+  }
+  
   getStatus(): Observable<any> {
     return this.http.get(`${this.baseUrl}/status`);
   }

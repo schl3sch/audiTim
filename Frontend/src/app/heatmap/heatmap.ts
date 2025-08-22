@@ -25,6 +25,15 @@ export class Heatmap implements AfterViewInit, OnInit {
   availableStart: string | null = null;
   availableStop: string | null = null;
 
+  avg = false;
+
+  isPlaying = false;
+  playSpeed = 200; // Millisekunden pro Frame
+  playInterval: any;
+  
+  live = false;
+  private liveInterval?: any;
+
   constructor(private sensor: Sensor) {}
 
   ngOnInit(): void {
@@ -63,25 +72,37 @@ export class Heatmap implements AfterViewInit, OnInit {
   }
 
   private loadHeatmapFrames(range?: { start?: string; stop?: string }): void {
-    let request$;
-
-    if (range?.start && range?.stop) {
-      request$ = this.sensor.postHeatmapsRange(range.start, range.stop);
+    if (range?.start && range?.stop && this.avg) {
+      // single avg request
+      this.sensor.postHeatmapAvg(range.start, range.stop).subscribe({
+        next: (res) => {
+          this.frame = res.data;
+          this.updatePlot(this.frame.grid, true);
+        },
+        error: (err) => console.error('Fehler beim Laden der Durchschnitts-Heatmap:', err)
+      });
     } else {
-      request$ = this.sensor.getHeatmaps();
-    }
+      // normaler Request
+      let request$;
+      if (range?.start && range?.stop) {
+        request$ = this.sensor.postHeatmapsRange(range.start, range.stop);
+      } else {
+        request$ = this.sensor.getHeatmaps();
+      }
 
-    request$.subscribe({
-      next: (res) => {
-        this.frames = res.data;
-        if (this.frames.length > 0) {
-          this.currentFrameIndex = 0;
-          this.updatePlot(this.frames[this.currentFrameIndex].grid, false);
-        }
-      },
-      error: (err) => console.error('Fehler beim Laden der Heatmap-Frames:', err)
-    });
+      request$.subscribe({
+        next: (res) => {
+          this.frames = res.data;
+          if (this.frames.length > 0) {
+            this.currentFrameIndex = 0;
+            this.updatePlot(this.frames[this.currentFrameIndex].grid, false);
+          }
+        },
+        error: (err) => console.error('Fehler beim Laden der Heatmap-Frames:', err)
+      });
+    }
   }
+
 
   onSliderChange(event: Event): void {
     const target = event.target as HTMLInputElement;
@@ -131,10 +152,6 @@ export class Heatmap implements AfterViewInit, OnInit {
       { displayModeBar: false }
     );
   }
-  
-  isPlaying = false;
-  playSpeed = 200; // Millisekunden pro Frame
-  playInterval: any;
 
   // Neuer Handler, der direkt den Wert akzeptiert
   onSliderChangeValue(value: number) {
@@ -161,12 +178,10 @@ export class Heatmap implements AfterViewInit, OnInit {
     }
   }
 
-    live = false;
-  private liveInterval?: any;
-
   toggleLive(): void {
     this.live = !this.live;
     if (this.live) {
+      this.avg = false;       // AVG ausschalten
       this.startLive();
     } else {
       this.stopLive();
@@ -193,5 +208,14 @@ export class Heatmap implements AfterViewInit, OnInit {
       },
       error: (err) => console.error('Fehler beim Laden der Heatmap-Frames:', err)
     });
+  }
+
+  toggleAVG(): void {
+    this.avg = !this.avg;
+    if (this.avg) {
+      this.live = false;      // Live ausschalten
+      this.stopLive();
+      this.loadHeatmapFrames({ start: this.customStart, stop: this.customStop });
+    }
   }
 }

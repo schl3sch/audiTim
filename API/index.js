@@ -326,6 +326,65 @@ app.get("/api/getLiveHeatmap", async (req, res) => {
   }
 });
 
+// Durchschnitts-Heatmap im Zeitraum abfragen (POST)
+app.post("/api/postHeatmapAvg", async (req, res) => {
+  const { start, stop } = req.body;
+
+  if (!start || !stop) {
+    return res.status(400).json({ error: "Bitte start und stop im Body als Timestamps angeben" });
+  }
+
+  const fluxQuery = `
+    from(bucket: "${bucket}")
+      |> range(start: ${start}, stop: ${stop})
+      |> filter(fn: (r) => r._measurement == "heatmap_arr")
+      |> filter(fn: (r) => r._field == "base64")
+      |> sort(columns: ["_time"], desc: true)
+  `;
+
+  try {
+    // Array-Summe vorbereiten
+    const size = 10;
+    const sumGrid = Array.from({ length: size }, () =>
+      Array(size).fill(0)
+    );
+    let count = 0;
+
+    for await (const { values, tableMeta } of queryApi.iterateRows(fluxQuery)) {
+      const obj = tableMeta.toObject(values);
+      const buffer = Buffer.from(obj._value, "base64");
+      const arr = Array.from(new Uint8Array(buffer));
+
+      // 10x10 Grid erzeugen
+      for (let i = 0; i < size; i++) {
+        for (let j = 0; j < size; j++) {
+          sumGrid[i][j] += arr[i * size + j];
+        }
+      }
+      count++;
+    }
+
+    if (count === 0) {
+      return res.json({ data: null, message: "Keine Heatmaps im angegebenen Zeitraum gefunden" });
+    }
+
+    // Durchschnitt berechnen
+    const avgGrid = sumGrid.map(row => row.map(val => Math.round(val / count)));
+
+    res.json({
+      data: {
+        start,
+        stop,
+        count,
+        grid: avgGrid
+      }
+    });
+  } catch (error) {
+    console.error("Influx query error:", error.message);
+    res.status(500).json({ error: "Error querying InfluxDB" });
+  }
+});
+
 // API Node Red und InfluxDB Status
 app.get('/api/status', async (req, res) => {
   const results = { nodeRed: false, influx: false };

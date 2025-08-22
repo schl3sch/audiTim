@@ -7,13 +7,20 @@
       <strong>{{ availableStart | date:'dd.MM.yyyy, HH:mm:ss' }}</strong> bis 
       <strong>{{ availableStop | date:'dd.MM.yyyy, HH:mm:ss' }}</strong>
     </p>
-
-    <button 
-      (click)="toggleLive()" 
-      class="btn btn-sm"
-      [ngClass]="live ? 'btn-primary' : 'btn-secondary'">
-      {{ live ? 'Stop Live' : 'Start Live' }}
-    </button>
+        <div class="d-flex align-items-center gap-3">
+      <button 
+        (click)="toggleLive()" 
+        class="btn btn-lg"
+        [ngClass]="live ? 'btn-primary fw-bold' : 'btn-outline-primary fw-bold'">
+        <i class="bi bi-lightning-fill me-1"></i> Live Mode
+      </button>
+      <button 
+        (click)="toggleAVG()" 
+        class="btn btn-lg"
+        [ngClass]="avg ? 'btn-success fw-bold' : 'btn-outline-success fw-bold'">
+        <i class="bi bi-bar-chart-fill me-1"></i> AVG Mode
+      </button>
+    </div>
   </div>
 </div>
 
@@ -25,7 +32,7 @@
 </app-range-selector>
 
 <!-- Slider mit Play-Button -->
-<div class="card mb-4 shadow-sm p-4" *ngIf="!live">
+<div class="card mb-4 shadow-sm p-4" *ngIf="!live && !avg">
   <div class="d-flex align-items-center gap-3">
     <!-- Play/Pause Button -->
     <button class="btn btn-primary" (click)="togglePlay()">
