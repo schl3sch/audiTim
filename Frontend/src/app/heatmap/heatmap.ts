@@ -14,6 +14,8 @@ import { RangeSelector } from '../range-selector/range-selector';
 })
 export class Heatmap implements AfterViewInit, OnInit {
   frames: HeatmapFrame[] = [];
+  frame: HeatmapFrame | null = null;
+
   currentFrameIndex = 0;
 
   selectedRange = '';   // Dropdown Auswahl
@@ -148,5 +150,39 @@ export class Heatmap implements AfterViewInit, OnInit {
     } else {
       clearInterval(this.playInterval);
     }
+  }
+
+    live = false;
+  private liveInterval?: any;
+
+  toggleLive(): void {
+    this.live = !this.live;
+    if (this.live) {
+      this.startLive();
+    } else {
+      this.stopLive();
+    }
+  }
+
+  private startLive(): void {
+    // Range-Selector deaktivieren, ggf. Flag setzen
+    this.loadLiveData(); // sofort laden
+    this.liveInterval = setInterval(() => this.loadLiveData(), 1000); // jede Sekunde
+  }
+
+  private stopLive(): void {
+    clearInterval(this.liveInterval);
+    this.liveInterval = undefined;
+    // Range-Selector wieder aktivieren
+  }
+
+  private loadLiveData(): void {
+    this.sensor.getLiveHeatmap().subscribe({
+      next: (res) => {
+        this.frame = res.data;
+        this.updatePlot(this.frame.grid);
+      },
+      error: (err) => console.error('Fehler beim Laden der Heatmap-Frames:', err)
+    });
   }
 }

@@ -57,6 +57,12 @@ export class Sensor {
   return this.http.get<{ oldest: string; newest: string }>(`${this.baseUrl}/getHeatmapRange`);
   }
 
+  
+  getLiveHeatmap(): Observable<{ data: HeatmapFrame }> {
+  return this.http.get<{ data: HeatmapFrame }>(`${this.baseUrl}/getLiveHeatmap`, {
+  });
+  }
+  
   getStatus(): Observable<any> {
     return this.http.get(`${this.baseUrl}/status`);
   }
