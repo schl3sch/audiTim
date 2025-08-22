@@ -45,7 +45,7 @@ export class Heatmap implements AfterViewInit, OnInit {
         this.frames = res.data;
         this.currentFrameIndex = 0;
         if (this.frames.length > 0) {
-          this.updatePlot(this.frames[this.currentFrameIndex].grid);
+          this.updatePlot(this.frames[this.currentFrameIndex].grid, false);
         }
       },
       error: (err) => console.error(err)
@@ -76,7 +76,7 @@ export class Heatmap implements AfterViewInit, OnInit {
         this.frames = res.data;
         if (this.frames.length > 0) {
           this.currentFrameIndex = 0;
-          this.updatePlot(this.frames[this.currentFrameIndex].grid);
+          this.updatePlot(this.frames[this.currentFrameIndex].grid, false);
         }
       },
       error: (err) => console.error('Fehler beim Laden der Heatmap-Frames:', err)
@@ -86,13 +86,20 @@ export class Heatmap implements AfterViewInit, OnInit {
   onSliderChange(event: Event): void {
     const target = event.target as HTMLInputElement;
     this.currentFrameIndex = +target.value;
-    this.updatePlot(this.frames[this.currentFrameIndex].grid);
+    this.updatePlot(this.frames[this.currentFrameIndex].grid, false);
   }
 
-  private updatePlot(z: number[][]): void {
+  private updatePlot(z: number[][], singleFrame: boolean): void {
     const size = z.length;
     const x = Array.from({ length: size }, (_, i) => i);
     const y = Array.from({ length: size }, (_, i) => i);
+
+    var heatmapText;
+
+    if (singleFrame) 
+      heatmapText = `3D Heatmap - Live Frame (${this.frame?.time})`;
+    else
+      heatmapText = `3D Heatmap - Frame ${this.currentFrameIndex + 1} (${this.frames[this.currentFrameIndex]?.time})`;
 
     Plotly.react(
       'plotly-heatmap',
@@ -107,13 +114,15 @@ export class Heatmap implements AfterViewInit, OnInit {
       ],
       {
         title: { 
-          text: `3D Heatmap – Frame ${this.currentFrameIndex + 1} (${this.frames[this.currentFrameIndex]?.time})` 
+          text: heatmapText
         },
         autosize: true,
         scene: {
           xaxis: { title: { text: 'X' } },
           yaxis: { title: { text: 'Y' } },
-          zaxis: { title: { text: 'Z' } },
+          zaxis: { 
+            range: [0, 255],
+            title: { text: 'Z' } },
           camera: { eye: { x: 1.5, y: 1.5, z: 1.0 } },
           dragmode: false
         },
@@ -131,7 +140,7 @@ export class Heatmap implements AfterViewInit, OnInit {
   onSliderChangeValue(value: number) {
     this.currentFrameIndex = value;
     if (this.frames.length > 0) {
-      this.updatePlot(this.frames[this.currentFrameIndex].grid);
+      this.updatePlot(this.frames[this.currentFrameIndex].grid, false);
     }
   }
 
@@ -180,7 +189,7 @@ export class Heatmap implements AfterViewInit, OnInit {
     this.sensor.getLiveHeatmap().subscribe({
       next: (res) => {
         this.frame = res.data;
-        this.updatePlot(this.frame.grid);
+        this.updatePlot(this.frame.grid, true);
       },
       error: (err) => console.error('Fehler beim Laden der Heatmap-Frames:', err)
     });

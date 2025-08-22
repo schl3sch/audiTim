@@ -291,20 +291,34 @@ app.get("/api/getLiveHeatmap", async (req, res) => {
       |> filter(fn: (r) => r._measurement == "heatmap_arr")
       |> filter(fn: (r) => r._field == "base64")
       |> sort(columns: ["_time"], desc: true)
-      |> limit(n: 1) // optional: direkt nur 1 Ergebnis
+      |> limit(n: 1)
   `;
 
   try {
     let latest = null;
+
     for await (const { values, tableMeta } of queryApi.iterateRows(fluxQuery)) {
       const obj = tableMeta.toObject(values);
+
+      // decode base64 into 10x10 grid
       const buffer = Buffer.from(obj._value, "base64");
       const arr = Array.from(new Uint8Array(buffer));
       const grid = [];
-      for (let i = 0; i < 10; i++) grid.push(arr.slice(i * 10, (i + 1) * 10));
-      latest = { time: obj._time, grid };
-      break; // nur den neuesten
+      for (let i = 0; i < 10; i++) {
+        grid.push(arr.slice(i * 10, (i + 1) * 10));
+      }
+
+      // convert UTC timestamp to local time (Berlin)
+      const utcDate = new Date(obj._time);
+      const localTime = utcDate.toLocaleString("de-DE", {
+        timeZone: "Europe/Berlin",
+        hour12: false,
+      });
+
+      latest = { time: localTime, grid };
+      break; // only newest one
     }
+
     res.json({ data: latest });
   } catch (error) {
     console.error("Influx query error:", error.message);
