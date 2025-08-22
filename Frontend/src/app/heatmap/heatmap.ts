@@ -142,10 +142,12 @@ export class Heatmap implements AfterViewInit, OnInit {
           xaxis: { title: { text: 'X' } },
           yaxis: { title: { text: 'Y' } },
           zaxis: { 
-            range: [0, 255],
+            range: [0, 50],
             title: { text: 'Z' } },
           camera: { eye: { x: 1.5, y: 1.5, z: 1.0 } },
-          dragmode: false
+          dragmode: false,
+          aspectmode: 'manual',
+          aspectratio: { x: 1, y: 1, z: 1 }
         },
         margin: { l: 0, r: 0, b: 0, t: 40 },
       },
