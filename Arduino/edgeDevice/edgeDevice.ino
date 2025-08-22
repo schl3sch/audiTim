@@ -13,6 +13,7 @@
 #include <WiFi.h> // Is installed automatically. Don't install additional libs
 #include <ArduinoMqttClient.h> // Has to be installed manually
 #include <esp_now.h>
+#include <esp_wifi.h>
 #include "../arduino_secrets.h" // Local file with secrets
 #include "time.h" // For Timestamps NTP
 #include <ArduinoJson.h> // For MQTT Json
@@ -27,7 +28,7 @@
 // ESP-2:         94:54:C5:E8:BC:40 -> DE:AD:C0:DE:00:02
 // ESP-3:         D4:8C:49:69:D5:74 -> DE:AD:C0:DE:00:03
 // ESP-4:         D4:8C:49:6A:EC:24 -> DE:AD:C0:DE:00:04
-// ESP-5: (Edge)  UNKNOWN           -> DE:AD:C0:DE:00:05
+// ESP-5: (Edge)  D4:8C:49:69:A2:F0 -> unchanged
 
 const char ssid[] = SECRET_SSID;    // your network SSID
 const char pass[] = SECRET_PASS;    // your network password
@@ -45,7 +46,6 @@ unsigned long previousMillis = 0;
 unsigned long  count = 0;
 
 // ESP-Now
-const uint8_t myMac[] = {0xDE, 0xAD, 0xC0, 0xDE, 0x00, 0x05}; // Will get changed based on the ESP; myMac[5] can be used as identifier
 typedef struct struct_message {
   uint16_t audio; // 0-4095 Mic volume
 } struct_message; // Typedef
@@ -67,10 +67,7 @@ void setup() {
   Serial.begin(115200);
   delay(1000);
 
-  // Change local MAC-Adress
-  esp_wifi_set_mac(WIFI_IF_STA, myMac);
-
-  // Connect to enterprise WiFi
+  // Connect to WiFi
   connectWPA2();
 
   // Connect to MQTT
@@ -83,7 +80,7 @@ void setup() {
 
 void loop() {
   for (int i = 0; i < 4; i++){
-    collectEsp[i][countEspTicks] = 5000;
+    collectEsp[i][countEspTicks] = 0;
   }
   unsigned long startProbeMillis = millis(); // Each measure and sending cycle will take exactly 100ms
 
@@ -111,7 +108,7 @@ void onReceive(const esp_now_recv_info* info, const uint8_t* data, int len) {
   memcpy(&incomingData, data, sizeof(incomingData));
 
   Serial.print("Ref:4095,");
-  Serial.printf("%u-Data:%u,", identifier, incomingData.audio); // %u for unsigned integer
+  Serial.printf("%u-Data:%u\n", identifier, incomingData.audio); // %u for unsigned integer
   collectEsp[identifier - 1][countEspTicks] = incomingData.audio;
 }
 
