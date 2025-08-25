@@ -448,15 +448,20 @@ app.get("/api/getAllHeatmaps", async (req, res) => {
   }
 });
 
-// API Peeks dekosierungs test
-app.get("/api/getPeaks", async (req, res) => {
+// API: Peaks im Zeitraum abfragen (POST)
+app.post("/api/postPeaksRange", async (req, res) => {
+  const { start, stop } = req.body;
+
+  if (!start || !stop) {
+    return res.status(400).json({ error: "Bitte start und stop im Body als Timestamps angeben" });
+  }
+
   const fluxQuery = `
     from(bucket: "${bucket}")
-      |> range(start: -1h)
+      |> range(start: ${start}, stop: ${stop})
       |> filter(fn: (r) => r._measurement == "heatmap_arr")
       |> filter(fn: (r) => r._field == "peakX" or r._field == "peakY" or r._field == "peakValue")
       |> sort(columns: ["_time"], desc: true)
-      |> limit(n:15)  // 3 Felder * 5 Datensätze
   `;
 
   const grouped = {};
@@ -471,13 +476,69 @@ app.get("/api/getPeaks", async (req, res) => {
 
       grouped[obj._time][obj._field] = obj._value;
     }
-
-    // Nur die letzten 5 zusammengefassten Datensätze
-    const result = Object.values(grouped).slice(0, 5);
-
+    const result = Object.values(grouped);
     res.json({ data: result });
   } catch (error) {
     console.error("Influx query error:", error);
+    res.status(500).json({ error: "Error querying InfluxDB" });
+  }
+});
+
+// Letzte Peaks (Default, ohne Range) -> optional
+app.get("/api/getPeaks", async (req, res) => {
+  const fluxQuery = `
+    from(bucket: "${bucket}")
+      |> range(start: -1h)
+      |> filter(fn: (r) => r._measurement == "heatmap_arr")
+      |> filter(fn: (r) => r._field == "peakX" or r._field == "peakY" or r._field == "peakValue")
+      |> sort(columns: ["_time"], desc: true)
+      |> limit(n:15)
+  `;
+
+  const grouped = {};
+  try {
+    for await (const { values, tableMeta } of queryApi.iterateRows(fluxQuery)) {
+      const obj = tableMeta.toObject(values);
+
+      if (!grouped[obj._time]) {
+        grouped[obj._time] = { time: obj._time };
+      }
+      grouped[obj._time][obj._field] = obj._value;
+    }
+
+    const result = Object.values(grouped);
+    res.json({ data: result });
+  } catch (error) {
+    console.error("Influx query error:", error);
+    res.status(500).json({ error: "Error querying InfluxDB" });
+  }
+});
+
+// Live-Peaks abrufen
+app.get("/api/getLivePeaks", async (req, res) => {
+  const now = new Date();
+  const twoSecAgo = new Date(now.getTime() - 2000); // letzte 2 Sekunden
+
+  const fluxQuery = `
+    from(bucket: "${bucket}")
+    |> range(start: ${twoSecAgo.toISOString()}, stop: ${now.toISOString()})
+    |> filter(fn: (r) => r._measurement == "heatmap_arr")
+    |> filter(fn: (r) => r._field == "peakX" or r._field == "peakY" or r._field == "peakValue")
+    |> sort(columns: ["_time"], desc: true)
+    |> limit(n: 1)
+  `;
+  const grouped = {};
+
+  try {
+    for await (const { values, tableMeta } of queryApi.iterateRows(fluxQuery)) {
+      const obj = tableMeta.toObject(values);
+      if (!grouped[obj._time]) grouped[obj._time] = { time: obj._time };
+      grouped[obj._time][obj._field] = obj._value;
+    }
+    const latest = Object.values(grouped)[0] ?? null;
+    res.json({ data: latest });
+  } catch (error) {
+    console.error("Influx query error:", error.message);
     res.status(500).json({ error: "Error querying InfluxDB" });
   }
 });

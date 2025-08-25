@@ -11,9 +11,9 @@
 
     <button 
       (click)="toggleLive()" 
-      class="btn btn-sm"
-      [ngClass]="live ? 'btn-primary' : 'btn-secondary'">
-      {{ live ? 'Stop Live' : 'Start Live' }}
+      class="btn btn-lg"
+      [ngClass]="live ? 'btn-primary fw-bold' : 'btn-outline-primary fw-bold'">
+      <i class="bi bi-lightning-fill me-1"></i> Live Mode
     </button>
   </div>
 </div>

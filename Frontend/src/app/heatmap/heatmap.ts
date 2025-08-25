@@ -135,7 +135,7 @@ export class Heatmap implements AfterViewInit, OnInit {
         },
       ],
       {
-        title: { text: heatmapText },
+        title: { text: heatmapText, font: { color: 'white' } }, // Titel auch weiß
 
         paper_bgcolor: 'rgba(0,0,0,0)',
         plot_bgcolor: 'rgba(0,0,0,0)',
@@ -144,9 +144,20 @@ export class Heatmap implements AfterViewInit, OnInit {
         scene: {
           bgcolor: 'rgba(0,0,0,0)',
 
-          xaxis: { title: { text: 'X' } },
-          yaxis: { title: { text: 'Y' } },
-          zaxis: { range: [0, 50], title: { text: 'Z' } },
+          xaxis: { 
+            title: { text: 'X', font: { color: 'white' } }, 
+            tickfont: { color: 'white' } 
+          },
+          yaxis: { 
+            title: { text: 'Y', font: { color: 'white' } }, 
+            tickfont: { color: 'white' } 
+          },
+          zaxis: { 
+            range: [0, 50], 
+            title: { text: 'Z', font: { color: 'white' } }, 
+            tickfont: { color: 'white' } 
+          },
+
           camera: { eye: { x: 1.5, y: 1.5, z: 1.0 } },
           dragmode: false,
           aspectmode: 'manual',
