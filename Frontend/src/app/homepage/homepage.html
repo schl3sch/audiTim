@@ -1,74 +1,82 @@
 <div class="container py-5">
-
-  <!-- Hero -->
-<div class="text-center mb-5 d-flex flex-column align-items-center">
+<!-- Hero -->
+  <div class="text-center mb-5 d-flex flex-column align-items-center">
     <h1 class="display-4 fw-bold">Willkommen bei AudiTim</h1>
     <p class="lead text-muted">Analysiere, visualisiere und verwalte deine Sensordaten in Echtzeit.</p>
   </div>
 
 <!-- Intro -->
-<div class="text-center mb-5">
-  <p class="text-muted mb-1">
-    AudiTim ist ein verteiltes System zur akustischen Raumüberwachung.
-  </p>
-  <p class="text-muted">
-    Mit vier Sensoren werden Lautstärkedaten in Echtzeit erfasst, zentral gespeichert und über ein Web-Frontend in Heatmaps und Diagrammen visualisiert.
-  </p>
-</div>
+  <div class="text-center mb-5">
+    <p class="text-muted mb-1">
+      AudiTim ist ein verteiltes System zur akustischen Raumüberwachung.
+    </p>
+    <p class="text-muted">
+      Mit vier Sensoren werden Lautstärkedaten in Echtzeit erfasst, zentral gespeichert und über ein Web-Frontend in Heatmaps und Diagrammen visualisiert.
+    </p>
+  </div>
 
-  <!-- Features -->
+<!-- Features -->
   <div class="row text-center g-4 mb-5">
-    <div class="col-md-4">
-      <div class="card h-100 shadow-sm">
-        <div class="card-body">
-          <h5 class="card-title">📊 Heatmap</h5>
-          <p class="card-text text-muted">3D-Darstellung der Sensordaten im Heatmapformat </p>
-          <a routerLink="/heatmap" class="btn btn-outline-primary">Zur Heatmap</a>
+      <div class="col-md-4">
+        <div class="card h-100 shadow-sm">
+          <div class="card-body">
+            <h5 class="card-title">📊 Heatmap</h5>
+            <p class="card-text text-muted">3D-Darstellung der Sensordaten im Heatmapformat </p>
+            <a routerLink="/heatmap" class="btn btn-outline-primary">Zur Heatmap</a>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="card h-100 shadow-sm">
+          <div class="card-body">
+            <h5 class="card-title">🛰️ 2D Sensoren</h5>
+            <p class="card-text text-muted">Übersicht der erfassten Daten pro einzelnem Sensor</p>
+            <a routerLink="/zweid" class="btn btn-outline-primary">Zur Übersicht</a>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="card h-100 shadow-sm">
+          <div class="card-body">
+            <h5 class="card-title">📍 Peakmap</h5>
+            <p class="card-text text-muted">2D-Darstellung der Peaks aus den Sensordaten</p>
+            <a routerLink="/peakmap" class="btn btn-outline-primary">Zur Peakmap</a>
+          </div>
+        </div>
+      </div>
+
+    <!-- Zweite Reihe: GitHub und Doku und Admin -->
+    <div class="row justify-content-center text-center g-4 mb-5">
+      <div class="col-md-4">
+        <div class="card h-100 shadow-sm">
+          <div class="card-body">
+            <h5 class="card-title">🐙 GitHub Repo</h5>
+            <p class="card-text text-muted">Hier findest du den Quellcode dieses Projekts auf GitHub.</p>
+            <a href="https://github.com/JD-GG/audiTim" target="_blank" class="btn btn-outline-primary">Zum GitHub</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-4">
+        <div class="card h-100 shadow-sm">
+          <div class="card-body">
+            <h5 class="card-title">📚 Dokumentation</h5>
+            <p class="card-text text-muted">Hier findest du die offizielle Dokumentation des Projekts.</p>
+            <a routerLink="/doku-pdf" class="btn btn-outline-primary">Zur Doku</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-4">
+        <div class="card h-100 shadow-sm">
+          <div class="card-body">
+            <h5 class="card-title">⚙️ Admin</h5>
+            <p class="card-text text-muted">Ansicht von DB, Datenarrays und NodeRed</p>
+            <a routerLink="/admin" class="btn btn-outline-primary">Zum Admin-Tab</a>
+          </div>
         </div>
       </div>
     </div>
-    <div class="col-md-4">
-      <div class="card h-100 shadow-sm">
-        <div class="card-body">
-          <h5 class="card-title">🛰️ 2D Sensoren</h5>
-          <p class="card-text text-muted">Übersicht der erfassten Daten pro einzelnem Sensor</p>
-          <a routerLink="/zweid" class="btn btn-outline-primary">Zur Übersicht</a>
-        </div>
-      </div>
-    </div>
-    <div class="col-md-4">
-      <div class="card h-100 shadow-sm">
-        <div class="card-body">
-          <h5 class="card-title">⚙️ Admin</h5>
-          <p class="card-text text-muted">Ansicht von DB, Datenarrays und NodeRed</p>
-          <a routerLink="/admin" class="btn btn-outline-primary">Zum Admin-Tab</a>
-        </div>
-      </div>
-    </div>
-<!-- Zweite Reihe: GitHub und Doku -->
-<div class="row justify-content-center text-center g-4 mb-5">
-  <div class="col-md-4">
-    <div class="card h-100 shadow-sm">
-      <div class="card-body">
-        <h5 class="card-title">🐙 GitHub Repo</h5>
-        <p class="card-text text-muted">Hier findest du den Quellcode dieses Projekts auf GitHub.</p>
-        <a href="https://github.com/JD-GG/audiTim" target="_blank" class="btn btn-outline-primary">Zum GitHub</a>
-      </div>
-    </div>
-  </div>
-
-  <div class="col-md-4">
-    <div class="card h-100 shadow-sm">
-      <div class="card-body">
-        <h5 class="card-title">📚 Dokumentation</h5>
-        <p class="card-text text-muted">Hier findest du die offizielle Dokumentation des Projekts.</p>
-        <a routerLink="/doku-pdf" class="btn btn-outline-primary">Zur Doku</a>
-      </div>
-    </div>
-  </div>
-</div>
-
-
   </div>
 
   <!-- Info Section -->
