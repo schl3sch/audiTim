@@ -131,19 +131,22 @@ export class Heatmap implements AfterViewInit, OnInit {
           y,
           type: 'surface',
           colorscale: 'YlOrRd',
+          opacity: 0.7,
         },
       ],
       {
-        title: { 
-          text: heatmapText
-        },
+        title: { text: heatmapText },
+
+        paper_bgcolor: 'rgba(0,0,0,0)',
+        plot_bgcolor: 'rgba(0,0,0,0)',
+
         autosize: true,
         scene: {
+          bgcolor: 'rgba(0,0,0,0)',
+
           xaxis: { title: { text: 'X' } },
           yaxis: { title: { text: 'Y' } },
-          zaxis: { 
-            range: [0, 50],
-            title: { text: 'Z' } },
+          zaxis: { range: [0, 50], title: { text: 'Z' } },
           camera: { eye: { x: 1.5, y: 1.5, z: 1.0 } },
           dragmode: false,
           aspectmode: 'manual',
