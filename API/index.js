@@ -385,27 +385,42 @@ app.post("/api/postHeatmapAvg", async (req, res) => {
   }
 });
 
-// API Node Red und InfluxDB Status
 app.get('/api/status', async (req, res) => {
-  const results = { nodeRed: false, influx: false };
+    const results = {
+        nodeRed: false,
+        influx: false,
+        nodeRedDetails: null
+    };
 
-  // Node-RED check
-  try {
-    const nr = await fetch('http://nodered:1880', { method: 'GET' });
-    results.nodeRed = nr.ok;
-  } catch {
-    results.nodeRed = false;
-  }
+    // Node-RED basic check
+    try {
+        const nr = await fetch('http://nodered:1880', { method: 'GET' });
+        results.nodeRed = nr.ok;
 
-  // Influx check
-  try {
-    const influxCheck = await fetch('http://influxdb:8086', { method: 'GET' });
-    results.influx = influxCheck.ok;
-  } catch {
-    results.influx = false;
-  }
+        // Node-RED detaillierte Infos abrufen
+        if (nr.ok) {
+            try {
+                const detailsRes = await fetch('http://nodered:1880/api/nodered-status', { method: 'GET' });
+                if (detailsRes.ok) {
+                    results.nodeRedDetails = await detailsRes.json();
+                }
+            } catch (err) {
+                results.nodeRedDetails = { error: 'Could not fetch Node-RED details' };
+            }
+        }
+    } catch {
+        results.nodeRed = false;
+    }
 
-  res.json(results);
+    // Influx check
+    try {
+        const influxCheck = await fetch('http://influxdb:8086', { method: 'GET' });
+        results.influx = influxCheck.ok;
+    } catch {
+        results.influx = false;
+    }
+
+    res.json(results);
 });
 
 // API Heatmap dekosierungs test
