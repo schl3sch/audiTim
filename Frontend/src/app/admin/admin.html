@@ -1,41 +1,81 @@
 <h1 class="mb-4 text-center">AudiTim Admin</h1>
 
-<!-- Verlinkungen zu Node-RED und Influx -->
 <div class="row g-4 justify-content-center">
+
+  <!-- Node-RED Basis Status -->
   <div class="col-md-4">
     <div class="card h-100 shadow-sm text-center">
       <div class="card-body">
         <h5 class="card-title">🔴 Node-RED</h5>
-          <p class="card-text text-muted">
-      Status: 
-      <span [ngClass]="{'text-success': nodeRedStatus, 'text-danger': nodeRedStatus === false}">
-        {{ nodeRedStatus === null ? '...prüfe' : (nodeRedStatus ? 'Online' : 'Offline') }}
-      </span>
-    </p>
+        <p class="card-text text-muted">
+          Status: 
+          <span [ngClass]="{'text-success': nodeRedStatus, 'text-danger': nodeRedStatus === false}">
+            {{ nodeRedStatus === null ? '...prüfe' : (nodeRedStatus ? 'Online' : 'Offline') }}
+          </span>
+        </p>
         <a href="http://localhost:1880" target="_blank" class="btn btn-outline-primary">Zu Node-RED</a>
       </div>
     </div>
   </div>
-  
+
+  <!-- Node-RED Detaillierte Infos -->
+  <div class="col-md-4" *ngIf="nodeRedDetails">
+    <div class="card h-100 shadow-sm text-center">
+      <div class="card-body">
+        <h5 class="card-title">📡 Node-RED Details</h5>
+        <p class="card-text text-muted">
+          MQTT: 
+          <span [ngClass]="{'text-success': nodeRedDetails.mqtt?.connected, 'text-danger': nodeRedDetails.mqtt?.connected === false}">
+            {{ nodeRedDetails.mqtt?.connected ? 'Verbunden' : 'Nicht verbunden' }}
+          </span>
+          <span *ngIf="nodeRedDetails.mqtt?.error" class="text-warning">({{ nodeRedDetails.mqtt.error }})</span>
+        </p>
+        <p class="card-text text-muted">
+          Influx: 
+          <span [ngClass]="{'text-success': nodeRedDetails.influx?.connected, 'text-danger': nodeRedDetails.influx?.connected === false}">
+            {{ nodeRedDetails.influx?.connected ? 'Verbunden' : 'Nicht verbunden' }}
+          </span>
+          <span *ngIf="nodeRedDetails.influx?.error" class="text-warning">({{ nodeRedDetails.influx.error }})</span>
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- InfluxDB -->
   <div class="col-md-4">
     <div class="card h-100 shadow-sm text-center">
       <div class="card-body">
         <h5 class="card-title">📈 InfluxDB</h5>
-            <p class="card-text text-muted">
-      Status: 
-      <span [ngClass]="{'text-success': influxStatus, 'text-danger': influxStatus === false}">
-        {{ influxStatus === null ? '...prüfe' : (influxStatus ? 'Online' : 'Offline') }}
-      </span>
-    </p>
+        <p class="card-text text-muted">
+          Status: 
+          <span [ngClass]="{'text-success': influxStatus, 'text-danger': influxStatus === false}">
+            {{ influxStatus === null ? '...prüfe' : (influxStatus ? 'Online' : 'Offline') }}
+          </span>
+        </p>
         <a href="http://localhost:8086/signin" target="_blank" class="btn btn-outline-primary">Zu InfluxDB</a>
       </div>
     </div>
   </div>
+
+  <!-- API -->
+  <div class="col-md-4">
+    <div class="card h-100 shadow-sm text-center">
+      <div class="card-body">
+        <h5 class="card-title">📊 API</h5>
+        <p class="card-text text-muted">
+          Status: 
+          <span [ngClass]="{'text-success': apiStatus, 'text-danger': apiStatus === false}">
+            {{ apiStatus === null ? '...prüfe' : (apiStatus ? 'Online' : 'Offline') }}
+          </span>
+        </p>
+      </div>
+    </div>
+  </div>
+
 </div>
 
-
 <!-- Array-Test Karte -->
-<div class="d-flex justify-content-center">
+<div class="d-flex justify-content-center mt-4">
   <div class="card p-4 mb-4 shadow-sm" style="display: inline-block; width: auto;">
     <h2 class="mb-3 text-center">Debug Funktion</h2>
     <div class="overflow-auto" style="max-width:100%; max-height:400px;">

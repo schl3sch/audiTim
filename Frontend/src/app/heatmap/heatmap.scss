@@ -1,0 +1,22 @@
+.plot-wrapper {
+  position: relative;
+  width: 100%;
+  height: 600px; // gewünschte Plot-Höhe hier steuern
+  overflow: hidden;
+}
+
+.plot-bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;   // oder 'contain' falls wichtig
+  z-index: 0;
+  pointer-events: none;
+}
+
+.plot-foreground {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}

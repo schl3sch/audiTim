@@ -5,7 +5,14 @@ import { Observable } from 'rxjs';
 export interface HeatmapFrame {
   time: string;
   grid: number[][];
-  }
+}
+
+export interface PeakFrame {
+  time: string;
+  peakX: number;
+  peakY: number;
+  peakValue: number;
+}
   
 // sensor.service.ts
 @Injectable({ providedIn: 'root' })
@@ -63,6 +70,25 @@ export class Sensor {
   });
   }
   
+  postHeatmapAvg(start: string, stop: string): Observable<{ data: HeatmapFrame }> {
+  return this.http.post<{ data: HeatmapFrame }>(`${this.baseUrl}/postHeatmapAvg`, {
+    start,
+    stop,
+  });
+  }
+
+  postPeaksRange(start: string, stop: string): Observable<{ data: PeakFrame[] }> {
+    return this.http.post<{ data: PeakFrame[] }>(`${this.baseUrl}/postPeaksRange`, { start, stop });
+  }
+
+  getPeaks(): Observable<{ data: PeakFrame[] }> {
+    return this.http.get<{ data: PeakFrame[] }>(`${this.baseUrl}/getPeaks`);
+  }
+
+  getLivePeaks(): Observable<{ data: PeakFrame }> {
+  return this.http.get<{ data: PeakFrame }>(`${this.baseUrl}/getLivePeaks`);
+  }
+
   getStatus(): Observable<any> {
     return this.http.get(`${this.baseUrl}/status`);
   }

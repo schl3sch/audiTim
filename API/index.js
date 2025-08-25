@@ -291,20 +291,34 @@ app.get("/api/getLiveHeatmap", async (req, res) => {
       |> filter(fn: (r) => r._measurement == "heatmap_arr")
       |> filter(fn: (r) => r._field == "base64")
       |> sort(columns: ["_time"], desc: true)
-      |> limit(n: 1) // optional: direkt nur 1 Ergebnis
+      |> limit(n: 1)
   `;
 
   try {
     let latest = null;
+
     for await (const { values, tableMeta } of queryApi.iterateRows(fluxQuery)) {
       const obj = tableMeta.toObject(values);
+
+      // decode base64 into 10x10 grid
       const buffer = Buffer.from(obj._value, "base64");
       const arr = Array.from(new Uint8Array(buffer));
       const grid = [];
-      for (let i = 0; i < 10; i++) grid.push(arr.slice(i * 10, (i + 1) * 10));
-      latest = { time: obj._time, grid };
-      break; // nur den neuesten
+      for (let i = 0; i < 10; i++) {
+        grid.push(arr.slice(i * 10, (i + 1) * 10));
+      }
+
+      // convert UTC timestamp to local time (Berlin)
+      const utcDate = new Date(obj._time);
+      const localTime = utcDate.toLocaleString("de-DE", {
+        timeZone: "Europe/Berlin",
+        hour12: false,
+      });
+
+      latest = { time: localTime, grid };
+      break; // only newest one
     }
+
     res.json({ data: latest });
   } catch (error) {
     console.error("Influx query error:", error.message);
@@ -312,27 +326,101 @@ app.get("/api/getLiveHeatmap", async (req, res) => {
   }
 });
 
-// API Node Red und InfluxDB Status
+// Durchschnitts-Heatmap im Zeitraum abfragen (POST)
+app.post("/api/postHeatmapAvg", async (req, res) => {
+  const { start, stop } = req.body;
+
+  if (!start || !stop) {
+    return res.status(400).json({ error: "Bitte start und stop im Body als Timestamps angeben" });
+  }
+
+  const fluxQuery = `
+    from(bucket: "${bucket}")
+      |> range(start: ${start}, stop: ${stop})
+      |> filter(fn: (r) => r._measurement == "heatmap_arr")
+      |> filter(fn: (r) => r._field == "base64")
+      |> sort(columns: ["_time"], desc: true)
+  `;
+
+  try {
+    // Array-Summe vorbereiten
+    const size = 10;
+    const sumGrid = Array.from({ length: size }, () =>
+      Array(size).fill(0)
+    );
+    let count = 0;
+
+    for await (const { values, tableMeta } of queryApi.iterateRows(fluxQuery)) {
+      const obj = tableMeta.toObject(values);
+      const buffer = Buffer.from(obj._value, "base64");
+      const arr = Array.from(new Uint8Array(buffer));
+
+      // 10x10 Grid erzeugen
+      for (let i = 0; i < size; i++) {
+        for (let j = 0; j < size; j++) {
+          sumGrid[i][j] += arr[i * size + j];
+        }
+      }
+      count++;
+    }
+
+    if (count === 0) {
+      return res.json({ data: null, message: "Keine Heatmaps im angegebenen Zeitraum gefunden" });
+    }
+
+    // Durchschnitt berechnen
+    const avgGrid = sumGrid.map(row => row.map(val => Math.round(val / count)));
+
+    res.json({
+      data: {
+        start,
+        stop,
+        count,
+        grid: avgGrid
+      }
+    });
+  } catch (error) {
+    console.error("Influx query error:", error.message);
+    res.status(500).json({ error: "Error querying InfluxDB" });
+  }
+});
+
 app.get('/api/status', async (req, res) => {
-  const results = { nodeRed: false, influx: false };
+    const results = {
+        nodeRed: false,
+        influx: false,
+        nodeRedDetails: null
+    };
 
-  // Node-RED check
-  try {
-    const nr = await fetch('http://nodered:1880', { method: 'GET' });
-    results.nodeRed = nr.ok;
-  } catch {
-    results.nodeRed = false;
-  }
+    // Node-RED basic check
+    try {
+        const nr = await fetch('http://nodered:1880', { method: 'GET' });
+        results.nodeRed = nr.ok;
 
-  // Influx check
-  try {
-    const influxCheck = await fetch('http://influxdb:8086', { method: 'GET' });
-    results.influx = influxCheck.ok;
-  } catch {
-    results.influx = false;
-  }
+        // Node-RED detaillierte Infos abrufen
+        if (nr.ok) {
+            try {
+                const detailsRes = await fetch('http://nodered:1880/api/nodered-status', { method: 'GET' });
+                if (detailsRes.ok) {
+                    results.nodeRedDetails = await detailsRes.json();
+                }
+            } catch (err) {
+                results.nodeRedDetails = { error: 'Could not fetch Node-RED details' };
+            }
+        }
+    } catch {
+        results.nodeRed = false;
+    }
 
-  res.json(results);
+    // Influx check
+    try {
+        const influxCheck = await fetch('http://influxdb:8086', { method: 'GET' });
+        results.influx = influxCheck.ok;
+    } catch {
+        results.influx = false;
+    }
+
+    res.json(results);
 });
 
 // API Heatmap dekosierungs test
@@ -375,15 +463,20 @@ app.get("/api/getAllHeatmaps", async (req, res) => {
   }
 });
 
-// API Peeks dekosierungs test
-app.get("/api/getPeaks", async (req, res) => {
+// API: Peaks im Zeitraum abfragen (POST)
+app.post("/api/postPeaksRange", async (req, res) => {
+  const { start, stop } = req.body;
+
+  if (!start || !stop) {
+    return res.status(400).json({ error: "Bitte start und stop im Body als Timestamps angeben" });
+  }
+
   const fluxQuery = `
     from(bucket: "${bucket}")
-      |> range(start: -1h)
+      |> range(start: ${start}, stop: ${stop})
       |> filter(fn: (r) => r._measurement == "heatmap_arr")
       |> filter(fn: (r) => r._field == "peakX" or r._field == "peakY" or r._field == "peakValue")
       |> sort(columns: ["_time"], desc: true)
-      |> limit(n:15)  // 3 Felder * 5 Datensätze
   `;
 
   const grouped = {};
@@ -398,13 +491,69 @@ app.get("/api/getPeaks", async (req, res) => {
 
       grouped[obj._time][obj._field] = obj._value;
     }
-
-    // Nur die letzten 5 zusammengefassten Datensätze
-    const result = Object.values(grouped).slice(0, 5);
-
+    const result = Object.values(grouped);
     res.json({ data: result });
   } catch (error) {
     console.error("Influx query error:", error);
+    res.status(500).json({ error: "Error querying InfluxDB" });
+  }
+});
+
+// Letzte Peaks (Default, ohne Range) -> optional
+app.get("/api/getPeaks", async (req, res) => {
+  const fluxQuery = `
+    from(bucket: "${bucket}")
+      |> range(start: -1h)
+      |> filter(fn: (r) => r._measurement == "heatmap_arr")
+      |> filter(fn: (r) => r._field == "peakX" or r._field == "peakY" or r._field == "peakValue")
+      |> sort(columns: ["_time"], desc: true)
+      |> limit(n:15)
+  `;
+
+  const grouped = {};
+  try {
+    for await (const { values, tableMeta } of queryApi.iterateRows(fluxQuery)) {
+      const obj = tableMeta.toObject(values);
+
+      if (!grouped[obj._time]) {
+        grouped[obj._time] = { time: obj._time };
+      }
+      grouped[obj._time][obj._field] = obj._value;
+    }
+
+    const result = Object.values(grouped);
+    res.json({ data: result });
+  } catch (error) {
+    console.error("Influx query error:", error);
+    res.status(500).json({ error: "Error querying InfluxDB" });
+  }
+});
+
+// Live-Peaks abrufen
+app.get("/api/getLivePeaks", async (req, res) => {
+  const now = new Date();
+  const twoSecAgo = new Date(now.getTime() - 2000); // letzte 2 Sekunden
+
+  const fluxQuery = `
+    from(bucket: "${bucket}")
+    |> range(start: ${twoSecAgo.toISOString()}, stop: ${now.toISOString()})
+    |> filter(fn: (r) => r._measurement == "heatmap_arr")
+    |> filter(fn: (r) => r._field == "peakX" or r._field == "peakY" or r._field == "peakValue")
+    |> sort(columns: ["_time"], desc: true)
+    |> limit(n: 1)
+  `;
+  const grouped = {};
+
+  try {
+    for await (const { values, tableMeta } of queryApi.iterateRows(fluxQuery)) {
+      const obj = tableMeta.toObject(values);
+      if (!grouped[obj._time]) grouped[obj._time] = { time: obj._time };
+      grouped[obj._time][obj._field] = obj._value;
+    }
+    const latest = Object.values(grouped)[0] ?? null;
+    res.json({ data: latest });
+  } catch (error) {
+    console.error("Influx query error:", error.message);
     res.status(500).json({ error: "Error querying InfluxDB" });
   }
 });

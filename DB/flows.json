@@ -61,7 +61,7 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 350,
+        "x": 360,
         "y": 220,
         "wires": [
             [
@@ -102,8 +102,8 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 750,
-        "y": 300,
+        "x": 990,
+        "y": 220,
         "wires": []
     },
     {
@@ -136,10 +136,127 @@
         "y": 220,
         "wires": [
             [
-                "af428bb866f14fb8",
-                "257fd1e076dbb753"
+                "257fd1e076dbb753",
+                "af428bb866f14fb8"
             ]
         ]
+    },
+    {
+        "id": "bc4befc737eee3c1",
+        "type": "status",
+        "z": "6761cd81a24d274a",
+        "name": "MqttStatus",
+        "scope": [
+            "6eb1bac4457d8171"
+        ],
+        "x": 140,
+        "y": 280,
+        "wires": [
+            [
+                "4a979a5c06079fcc"
+            ]
+        ]
+    },
+    {
+        "id": "4a979a5c06079fcc",
+        "type": "function",
+        "z": "6761cd81a24d274a",
+        "name": "function MqttStatus",
+        "func": "let key = msg.status?.text || 'unknown';\nlet statusText = msg.status?.text || 'unknown';\nlet isError = statusText.startsWith('Error');\n\nlet payload = {\n    connected: key.endsWith('connected'),\n    error: isError ? msg.status?.text : null\n};\n\nflow.set('mqttStatus', payload);\nreturn null;\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 370,
+        "y": 280,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "a470365c5765bec0",
+        "type": "status",
+        "z": "6761cd81a24d274a",
+        "name": "InfluxStatus",
+        "scope": [
+            "257fd1e076dbb753"
+        ],
+        "x": 130,
+        "y": 320,
+        "wires": [
+            [
+                "4a69905f95db3741"
+            ]
+        ]
+    },
+    {
+        "id": "4a69905f95db3741",
+        "type": "function",
+        "z": "6761cd81a24d274a",
+        "name": "function InfluxStatus",
+        "func": "let statusText = msg.status?.text || 'unknown';\nlet isError = statusText.startsWith('Error');\n\nlet payload = {\n    connected: !isError,\n    error: isError ? msg.status?.text : null\n};\n\nflow.set('influxStatus', payload); \nreturn null;\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 360,
+        "y": 320,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "2b363a7e98f5a8e4",
+        "type": "http in",
+        "z": "6761cd81a24d274a",
+        "name": "Http Endpoint",
+        "url": "/api/nodered-status",
+        "method": "get",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 130,
+        "y": 360,
+        "wires": [
+            [
+                "599011e327141c3a"
+            ]
+        ]
+    },
+    {
+        "id": "599011e327141c3a",
+        "type": "function",
+        "z": "6761cd81a24d274a",
+        "name": "getFlowStatus",
+        "func": "msg.payload = {\n    mqtt: flow.get('mqttStatus') || { connected: false, error: 'unknown' },\n    influx: flow.get('influxStatus') || { connected: false, error: 'unknown' }\n};\nreturn msg;\n",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 380,
+        "y": 360,
+        "wires": [
+            [
+                "611bdb58d2952494",
+                "af428bb866f14fb8"
+            ]
+        ]
+    },
+    {
+        "id": "611bdb58d2952494",
+        "type": "http response",
+        "z": "6761cd81a24d274a",
+        "name": "Response",
+        "statusCode": "200",
+        "headers": {},
+        "x": 600,
+        "y": 360,
+        "wires": []
     },
     {
         "id": "18d3dd12ac8f58c2",

@@ -13,25 +13,30 @@ import { Sensor } from '../sensor.service';
 export class Admin implements OnInit {
   nodeRedStatus: boolean | null = null;
   influxStatus: boolean | null = null;
+  apiStatus: boolean | null = null;
+  nodeRedDetails: any = null;
 
   constructor(private http: HttpClient, private sensor: Sensor) {}
 
- ngOnInit() {
+  ngOnInit() {
     this.checkStatuses();
-    // Optional: alle 10 Sekunden aktualisieren
     setInterval(() => this.checkStatuses(), 10000);
   }
-  
-checkStatuses() {
-  this.sensor.getStatus().subscribe({
-  next: (res) => {
-    this.nodeRedStatus = res.nodeRed;
-    this.influxStatus = res.influx;
-  },
-  error: () => {
-    this.nodeRedStatus = false;
-    this.influxStatus = false;
-  },
-});
-}
+
+  checkStatuses() {
+    this.sensor.getStatus().subscribe({
+      next: (res) => {
+        this.nodeRedStatus = res.nodeRed;
+        this.influxStatus = res.influx;
+        this.apiStatus = true;
+        this.nodeRedDetails = res.nodeRedDetails || null;
+      },
+      error: () => {
+        this.nodeRedStatus = false;
+        this.influxStatus = false;
+        this.apiStatus = false;
+        this.nodeRedDetails = null;
+      },
+    });
+  }
 }
