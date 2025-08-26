@@ -54,7 +54,7 @@
         "type": "function",
         "z": "6761cd81a24d274a",
         "name": "Virtual MQTT message",
-        "func": "// Sequence counter\ncontext.sequence = (context.sequence || 0) + 1;\nlet timestamp = Math.floor(Date.now() / 1000);\nlet value = Array.from({ length: 40 }, () => Math.floor(Math.random() * 4096));\n\n// Construct the simulated message payload\nmsg.payload = {\n    timestamp: timestamp,\n    value: value,\n    sequence: context.sequence,\n    meta: \"null\"\n};\n\nreturn msg;",
+        "func": "// Sequence counter\ncontext.sequence = (context.sequence || 0) + 1;\nlet timestamp = Math.floor(Date.now() / 1000);\nlet value = Array.from({ length: 40 }, () => Math.floor(Math.random() * 1500));\n\n// Construct the simulated message payload\nmsg.payload = {\n    timestamp: timestamp,\n    value: value,\n    sequence: context.sequence,\n    meta: \"null\"\n};\n\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,

@@ -153,7 +153,7 @@ export class Heatmap implements AfterViewInit, OnInit {
             tickfont: { color: 'white' } 
           },
           zaxis: { 
-            range: [0, 50], 
+            range: [0, 100], 
             title: { text: 'Z', font: { color: 'white' } }, 
             tickfont: { color: 'white' } 
           },
