@@ -1,19 +1,26 @@
 import os, time, requests, json, pathlib
-from datetime import datetime, timezone
+from datetime import timezone
 from influxdb_client import InfluxDBClient
 
-#Konfiguration
+# --- Konfiguration ---
 INFLUX_URL   = os.getenv("INFLUX_URL", "http://influxdb:8086")
 INFLUX_TOKEN = os.getenv("INFLUX_TOKEN")
 INFLUX_ORG   = os.getenv("INFLUX_ORG")
 BUCKET       = os.getenv("INFLUX_BUCKET")
 MEASUREMENT  = os.getenv("WATCHER_MEASUREMENT")
-FIELD        = os.getenv("WATCHER_FIELD",        "value")
+
+FIELDS_ENV   = os.getenv("WATCHER_FIELDS")  
+FIELDS = []
+if FIELDS_ENV:
+    FIELDS = [f.strip() for f in FIELDS_ENV.split(",") if f.strip()]
+else:
+    # Fallback
+    FIELDS = ["sensor_1"]
+
 THRESHOLD    = float(os.getenv("WATCHER_THRESHOLD", "50"))
 DISCORD_WEBHOOK = os.getenv("DISCORD_WEBHOOK")
 
-# alle X Sekunden prüfen
-INTERVAL_SEC = int(os.getenv("INTERVAL_SEC", "30")) #werte nach Komma (hier:30) sind immer die default / fallback Werte, für Änderung muss die .env geändert werden
+INTERVAL_SEC = int(os.getenv("INTERVAL_SEC", "30"))
 STATE_FILE   = os.getenv("STATE_FILE", ".last_discord_alert.json")
 
 def load_state():
@@ -28,26 +35,41 @@ def load_state():
 def save_state(state):
     pathlib.Path(STATE_FILE).write_text(json.dumps(state))
 
-def fetch_last_point():
+def build_field_filter(fields):
+    # -> 'r._field == "a" or r._field == "b" ...'
+    parts = [f'r._field == "{f}"' for f in fields]
+    return " or ".join(parts)
+
+def fetch_last_points():
+    """
+    Liefert dict {field: {"value": v, "time": iso}} für alle FIELDS,
+    falls es in der Range Daten gibt.
+    """
+    field_filter = build_field_filter(FIELDS)
     query = f'''
 from(bucket: "{BUCKET}")
   |> range(start: -5m)
-  |> filter(fn: (r) => r._measurement == "{MEASUREMENT}" and r._field == "{FIELD}")
+  |> filter(fn: (r) => r._measurement == "{MEASUREMENT}" and ({field_filter}))
+  |> group(columns: ["_field"])
   |> last()
 '''
+    out = {}
     with InfluxDBClient(url=INFLUX_URL, token=INFLUX_TOKEN, org=INFLUX_ORG) as client:
         tables = client.query_api().query(query=query, org=INFLUX_ORG)
         for table in tables:
             for record in table.records:
-                return {
+                fld = record.get_field()
+                out[fld] = {
                     "value": record.get_value(),
                     "time":  record.get_time().astimezone(timezone.utc).isoformat()
                 }
-    return None
+    return out
 
-def send_discord_alert(value, iso_time):
-    content = f"⚠️ Sensor prüfen!: {value} > {THRESHOLD} in `{MEASUREMENT}.{FIELD}`\nZeit (UTC): {iso_time}⚠️"
-    
+def send_discord_alert(field, value, iso_time):
+    content = (
+        f"⚠️ Schwellenwert überschritten: {value}"
+        f"in `{MEASUREMENT}.{field}`\nZeit (UTC): {iso_time}"
+    )
     r = requests.post(DISCORD_WEBHOOK, json={"content": content}, timeout=10)
     r.raise_for_status()
 
@@ -55,14 +77,14 @@ def main():
     state = load_state()  
     while True:
         try:
-            last = fetch_last_point()
-            if last:
-                v = last["value"]
-                t = last["time"]
-                # nur auslösen, wenn > THRESHOLD
-                if v is not None and float(v) > THRESHOLD and state.get("last_reported_iso") != t:
-                    send_discord_alert(v, t)
-                    state["last_reported_iso"] = t
+            last_map = fetch_last_points()
+            for field, data in last_map.items():
+                v = data["value"]
+                t = data["time"]
+                last_reported = state.get(field)
+                if v is not None and float(v) > THRESHOLD and last_reported != t:
+                    send_discord_alert(field, v, t)
+                    state[field] = t
                     save_state(state)
         except Exception as e:
             print("Fehler:", e)
