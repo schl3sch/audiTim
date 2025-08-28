@@ -64,10 +64,39 @@ services:
     volumes:
       - ./Documentation/ProjektSe/dokumentation.pdf:/usr/share/nginx/html/assets/dokumentation.pdf:ro
 
+  alert-watcher:
+    build:
+      context: ./AlertWatcher
+    image: alert-watcher:v1
+    container_name: alert-watcher
+    depends_on:
+      - influxdb
+    env_file:
+      - .env
+    environment:
+      - INFLUX_URL=http://influxdb:8086
+      - INFLUX_TOKEN=${INFLUX_TOKEN}
+      - INFLUX_ORG=${INFLUX_ORG}
+      - INFLUX_BUCKET=${INFLUX_BUCKET}
+      - MEASUREMENT=${WATCHER_MEASUREMENT}
+      - FIELD=${WATCHER_FIELD}
+      - THRESHOLD=${WATCHER_THRESHOLD}
+      - DISCORD_WEBHOOK=${DISCORD_WEBHOOK}
+      - INTERVAL_SEC=${WATCHER_INTERVAL_SEC}
+    volumes:
+      - alert_state:/app/state
+    restart: unless-stopped
+    networks:
+      - sensor-net
+
 volumes:
   influxdb_data:
   nodered_data:
+  alert_state:
 
 networks:
   sensor-net:
     external: true
+
+
+
