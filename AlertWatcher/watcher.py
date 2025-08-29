@@ -3,13 +3,13 @@ from datetime import timezone
 from influxdb_client import InfluxDBClient
 
 # --- Konfiguration ---
-INFLUX_URL   = os.getenv("INFLUX_URL", "http://influxdb:8086")
+INFLUX_URL   = os.getenv("INFLUX_URL")
 INFLUX_TOKEN = os.getenv("INFLUX_TOKEN")
 INFLUX_ORG   = os.getenv("INFLUX_ORG")
 BUCKET       = os.getenv("INFLUX_BUCKET")
-MEASUREMENT  = os.getenv("WATCHER_MEASUREMENT")
+MEASUREMENT  = "sensor_data"
 
-FIELDS_ENV   = os.getenv("WATCHER_FIELDS")  
+FIELDS_ENV   = "sensor_1,sensor_2,sensor_3,sensor_4"
 FIELDS = []
 if FIELDS_ENV:
     FIELDS = [f.strip() for f in FIELDS_ENV.split(",") if f.strip()]
@@ -17,10 +17,10 @@ else:
     # Fallback
     FIELDS = ["sensor_1"]
 
-THRESHOLD    = float(os.getenv("WATCHER_THRESHOLD", "50"))
+THRESHOLD    = float("0")
 DISCORD_WEBHOOK = os.getenv("DISCORD_WEBHOOK")
 
-INTERVAL_SEC = int(os.getenv("INTERVAL_SEC", "30"))
+INTERVAL_SEC = int("30")
 STATE_FILE   = os.getenv("STATE_FILE", ".last_discord_alert.json")
 
 def load_state():
@@ -36,15 +36,10 @@ def save_state(state):
     pathlib.Path(STATE_FILE).write_text(json.dumps(state))
 
 def build_field_filter(fields):
-    # -> 'r._field == "a" or r._field == "b" ...'
     parts = [f'r._field == "{f}"' for f in fields]
     return " or ".join(parts)
 
 def fetch_last_points():
-    """
-    Liefert dict {field: {"value": v, "time": iso}} für alle FIELDS,
-    falls es in der Range Daten gibt.
-    """
     field_filter = build_field_filter(FIELDS)
     query = f'''
 from(bucket: "{BUCKET}")
@@ -82,7 +77,7 @@ def main():
                 v = data["value"]
                 t = data["time"]
                 last_reported = state.get(field)
-                if v is not None and float(v) > THRESHOLD and last_reported != t:
+                if v is not None and float(v) == THRESHOLD and last_reported != t:
                     send_discord_alert(field, v, t)
                     state[field] = t
                     save_state(state)

@@ -78,11 +78,11 @@ services:
       - INFLUX_TOKEN=${INFLUX_TOKEN}
       - INFLUX_ORG=${INFLUX_ORG}
       - INFLUX_BUCKET=${INFLUX_BUCKET}
-      - MEASUREMENT=${WATCHER_MEASUREMENT}
-      - FIELD=${WATCHER_FIELD}
-      - THRESHOLD=${WATCHER_THRESHOLD}
+      - MEASUREMENT=sensor_data
+      - FIELDS=sensor_1, sensor_2, sensor_3, sensor_4
+      - THRESHOLD=0
       - DISCORD_WEBHOOK=${DISCORD_WEBHOOK}
-      - INTERVAL_SEC=${WATCHER_INTERVAL_SEC}
+      - INTERVAL_SEC=30
     volumes:
       - alert_state:/app/state
     restart: unless-stopped
