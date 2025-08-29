@@ -1,0 +1,56 @@
+<h1 class="mb-4">AudiTim</h1>
+<div class="card mb-4 shadow-sm p-4">
+  <h2 class="mb-3">Peaks</h2>
+  <div class="d-flex justify-content-between align-items-center">
+    <p *ngIf="availableStart && availableStop" class="mb-0">
+        Daten verfügbar von 
+        <strong>{{ availableStart | date:'dd.MM.yyyy, HH:mm:ss' }}</strong> bis 
+        <strong>{{ availableStop | date:'dd.MM.yyyy, HH:mm:ss' }}</strong>
+    </p>
+    <button 
+        (click)="toggleLive()" 
+        class="btn btn-lg"
+        [ngClass]="live ? 'btn-primary fw-bold' : 'btn-outline-primary fw-bold'">
+        <i class="bi bi-lightning-fill me-1"></i> Live Mode
+    </button>
+  </div>
+</div>
+
+<app-range-selector
+    *ngIf="!live"
+  [availableStart]="availableStart" 
+  [availableStop]="availableStop"
+  (rangeChange)="onRangeChange($event)">
+</app-range-selector>
+
+<!-- Slider mit Play-Button -->
+<div class="card mb-4 shadow-sm p-4" *ngIf="frames.length > 0 && !live" >
+  <div class="d-flex align-items-center gap-3">
+    <!-- Play/Pause Button -->
+    <button class="btn btn-primary" (click)="togglePlay()">
+      <span *ngIf="!isPlaying">&#9658;</span> <!-- Play Symbol -->
+      <span *ngIf="isPlaying">&#10074;&#10074;</span> <!-- Pause Symbol -->
+    </button>
+
+    <!-- Slider -->
+    <div class="flex-grow-1">
+      <label class="form-label">Frame: {{ currentFrameIndex + 1 }}/{{ frames.length }}</label>
+      <input
+        type="range"
+        min="0"
+        [max]="frames.length - 1"
+        [(ngModel)]="currentFrameIndex"
+        (input)="onSliderChange($event)"
+        class="form-range"
+      />
+    </div>
+  </div>
+</div>
+
+<!-- Plot -->
+<div class="card mb-4 shadow-sm p-4">
+  <div class="plot-wrapper">
+    <img src="/assets/RoomPicTopDown.png" alt="" class="plot-bg" />
+    <div id="plotly-peekmap" class="plot-foreground"></div>
+  </div>
+</div>

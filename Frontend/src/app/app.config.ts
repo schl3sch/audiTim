@@ -7,3 +7,6 @@ export const appConfig: ApplicationConfig = {
     provideHttpClient(), 
   ]
 };
+
+export const DATA_MODE: 'sensor' | 'heatmap' = 'heatmap';
+
