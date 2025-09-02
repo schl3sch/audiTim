@@ -1,4 +1,4 @@
-\chapter{Auswahl, Bewertung und Umsetzung der Softwarekomponenten}
+\chapter{Softwarekomponenten}
 
 \section{Entwicklungsumgebungen}
 
@@ -76,7 +76,7 @@ Auch die Heatmap-Seite zeigt die Auswahl zwischen einem ausgewählten Zeitraum u
 Mit einem Schieberegler kann die Zeit innerhalb des ausgewählten Zeitraums angepasst werden und gegenenenfalls eine Animation gestartet werden, die die Lautstärkeverteilung über den Zeitraum hinweg anzeigt.
 Außerdem wurde das in "4.5 3D-Raummodellierung" beschriebene 3D-Modell des Raumes als Hintergrundbild für die Heatmap verwendet, um eine realistische Darstellung zu ermöglichen:
 \begin{center}
-  \includegraphics[width=1\textwidth]{../images/UI/zweid.png}
+  \includegraphics[width=1\textwidth]{../images/UI/heatmap.png}
 \end{center}
 
 Dieses 3D-Modell wurde auch für die Peakmap-Seite verwendet, auf der die Spitzenwerte der Sensoren über den ausgewählten Zeitraum angezeigt werden:
@@ -85,6 +85,13 @@ Dieses 3D-Modell wurde auch für die Peakmap-Seite verwendet, auf der die Spitze
 \end{center}
 
 Und zu guter Letzt zeigt die Dokumentation-Seite diese Dokumentation, die sie hier gerade lesen, in einem eingebetteten PDF-Viewer an. 
+
+\subsection{Testing}
+Für die Umsetzung des automatisierten Testings wurde Playwright eingesetzt. Die Auswahl dieses Frameworks erfolgte nach einer vergleichenden Analyse. Dabei wurde Playwright von einem Teammitglied im Rahmen einer Projektarbeit mit einem ähnlichen Anwendungsfall ausführlich evaluiert und als am geeignetsten bewertet. Ausschlaggebend hierfür waren insbesondere die breite Browserunterstützung, die integrierten Funktionen für End-to-End-Tests sowie die hohe Stabilität und Geschwindigkeit der Testausführung.
+
+Durch den Einsatz von Playwright konnte die Konsistenz der Benutzeroberfläche (UI) zuverlässig sichergestellt werden. Die automatisierten Tests ermöglichen es, Interaktionen und Darstellungsvarianten reproduzierbar zu prüfen und so frühzeitig Abweichungen oder Fehler zu erkennen. Auf diese Weise trägt das Testing wesentlich zur Qualitätssicherung und Nachhaltigkeit der entwickelten Lösung bei.
+
+
 
 \section{Backend}
 Das Backend wurde mit Node.js und dem minimalistischen Framework Express.js umgesetzt. 
@@ -144,3 +151,5 @@ Schlussendlich entstand ein gut-funktionierender Flow:
 \begin{center}
   \includegraphics[width=1\textwidth]{../images/UI/flow.png}
 \end{center}
+
+
