@@ -1,4 +1,5 @@
 \chapter{Einleitung}
+\label{cha:einleitung}
 
 Im Rahmen des Software-Engineering-Projekts wird in einem Team ein System zur akustischen Raumüberwachung entwickelt. 
 Ziel des Projekts ist die kontinuierliche Erfassung und spätere Analyse der Lautstärkeverteilung in einem typischen Vorlesungsraum über den Zeitraum mehrerer Tage hinweg.
@@ -30,9 +31,9 @@ die zusätzlich eigene Daten erfasst. Die aggregierten Informationen aller vier 
 Aufgrundlage des MVPs sollen die folgenden Qualitätsmerkmale sichergestellt werden:
 \begin{itemize}
     \item \textbf{Echtheit \& Qualität der Daten:}
-    Nur qualitativ "gute" Daten z.B. durch optimierte Mikrofongehäuse ermöglichen realistische Messwerte und damit eine sinnvolle Analyse der akustischen Verhältnisse im Raum.
+    Nur qualitative Daten z.B. durch manuelle Überprüfung und Kalibrierung der Mikrofone ermöglichen realistische Messwerte und damit eine sinnvolle Analyse der akustischen Verhältnisse im Raum.
 \item \textbf{Accountability der Daten:}
-    Es muss nachvollziehbar sein, welche Sensoren zu welchem Zeitpunkt welche Daten erfasst haben. Diese Anforderung soll durch das Einführen einer eindeutigen ID für jeden Sensor, die mit jedem Value mitgeschickt wird, umgesetzt werden. Zusätzlich soll in jeder Übertragungsstelle ein Logging der Daten erfolgen um den Datenfluss nachvollziehbar zu machen.
+    Es muss nachvollziehbar sein, welche Sensoren zu welchem Zeitpunkt welche Daten erfasst haben. Diese Anforderung soll durch das Einführen einer eindeutigen ID für jeden Sensor, die mit jedem Value mitgeschickt wird, umgesetzt werden.
     \item \textbf{Verfügbarkeit:}
-    Da die Übertragungswege mit ESP-NOW und MQTT unterbrochen werden könnten ist es wichtig die Verfügbarkeit von Daten sicherzustellen indem ein möglicher Ausfall schnellstmöglich erkannt wird um diesen dann beheben zu können. Dies soll sichergestellt werden durch die Einführung einer Notification, die ausgelöst wird beim Ausfall eines Gerätes. Diese soll über e-mail oder WhatsApp Messenger bereitgestellt werden.
+    Da die Übertragungswege mit ESP-NOW und MQTT unterbrochen werden könnten ist es wichtig die Verfügbarkeit von Daten sicherzustellen indem ein möglicher Ausfall schnellstmöglich erkannt wird um diesen dann beheben zu können. Dies soll sichergestellt werden durch die Einführung einer Notification, die ausgelöst wird beim Ausfall eines Gerätes, was final über einen eigenen Discord-Server bereitgestellt werden soll.
 \end{itemize}
