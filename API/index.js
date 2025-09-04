@@ -1,43 +1,33 @@
+// index.js
 require('dotenv').config();
-const fs = require('fs');
+
 const express = require('express');
-const { InfluxDB, Point } = require('@influxdata/influxdb-client');
-const fetch = require('node-fetch'); // npm install node-fetch@2 falls noch nicht installiert
+const cors = require('cors');
+const fetch = require('node-fetch');
+const { InfluxDB } = require('@influxdata/influxdb-client');
 
 const app = express();
-const PORT = 3000;
-
 app.use(express.json());
-
-const cors = require('cors');
 app.use(cors());
 
-// InfluxDB connection setup
+// Influx-Setup
 const influx = new InfluxDB({
-  url: process.env.INFLUX_URL,
-  token: process.env.INFLUX_TOKEN,
+  url: process.env.INFLUX_URL || '',
+  token: process.env.INFLUX_TOKEN || '',
 });
-const org = process.env.INFLUX_ORG;
-const bucket = process.env.INFLUX_BUCKET;
-const queryApi = influx.getQueryApi(org);
-const writeApi = influx.getWriteApi(org, bucket, 'ns');
+const org = process.env.INFLUX_ORG || '';
+const bucket = process.env.INFLUX_BUCKET || '';
 
-// Connection test
-queryApi.queryRows(`buckets()`, {
-  next(row, tableMeta) {
-    const o = tableMeta.toObject(row);
-    console.log('✅ Connection successful - Bucket:', o.name);
-  },
-  error(error) {
-    console.error('❌ Connection to InfluxDB failed:', error);
-  },
-  complete() {
-    console.log('✅ Connection test completed.');
-  },
-});
+app.locals.bucket = bucket;
+app.locals.queryApi = influx.getQueryApi(org);
+app.locals.writeApi = influx.getWriteApi(org, bucket, 'ns');
 
-//  Ältester & neuster Timestamp pro Sensor
+//Routes
+
+// Ältester & neuester Timestamp pro Sensor
 app.get('/api/sensorRange', async (req, res) => {
+  const { queryApi, bucket } = req.app.locals;
+
   const fluxQueryOldest = `
     from(bucket: "${bucket}")
       |> range(start: 0)
@@ -76,8 +66,13 @@ app.get('/api/sensorRange', async (req, res) => {
 
 // Werte für Zeitraum abfragen
 app.post('/api/sensorRange', async (req, res) => {
+  const { queryApi, bucket } = req.app.locals;
   const { start, stop } = req.body;
-  if (!start || !stop) return res.status(400).json({ error: "Bitte start und stop im Body als Timestamps angeben" });
+
+  
+  if (start == null || stop == null) {
+    return res.status(400).json({ error: "Bitte start und stop im Body als Timestamps angeben" });
+  }
 
   const fluxQuery = `
     from(bucket: "${bucket}")
@@ -120,8 +115,10 @@ app.post('/api/sensorRange', async (req, res) => {
   }
 });
 
-// server.ts / app.post
+// Live-Sensoren (letzte Minute)
 app.get('/api/sensorLive', async (req, res) => {
+  const { queryApi, bucket } = req.app.locals;
+
   const now = new Date();
   const oneMinuteAgo = new Date(now.getTime() - 60 * 1000);
 
@@ -154,11 +151,13 @@ app.get('/api/sensorLive', async (req, res) => {
   }
 });
 
-// Neuestes Heatmap-Array abfragen (GET)
+// Neuestes Heatmap-Array (GET)
 app.get("/api/getArray", async (req, res) => {
+  const { queryApi, bucket } = req.app.locals;
+
   const fluxQuery = `
     from(bucket: "${bucket}")
-      |> range(start: -30d) // oder -inf, falls du ALLE Zeiten willst
+      |> range(start: -30d)
       |> filter(fn: (r) => r._measurement == "heatmap_arr")
       |> filter(fn: (r) => r._field == "base64")
       |> sort(columns: ["_time"], desc: true)
@@ -173,16 +172,12 @@ app.get("/api/getArray", async (req, res) => {
 
       const buffer = Buffer.from(obj._value, "base64");
       const arr = Array.from(new Uint8Array(buffer));
-
       const grid = [];
       for (let i = 0; i < 10; i++) {
         grid.push(arr.slice(i * 10, (i + 1) * 10));
       }
 
-      latest = {
-        time: obj._time,
-        grid
-      };
+      latest = { time: obj._time, grid };
     }
 
     if (!latest) {
@@ -196,8 +191,10 @@ app.get("/api/getArray", async (req, res) => {
   }
 });
 
-// Ältester & Neuster Timestamp abrufen
+// Heatmap-Range: ältester & neuester Zeitstempel
 app.get("/api/getHeatmapRange", async (req, res) => {
+  const { queryApi, bucket } = req.app.locals;
+
   const fluxQuery = `
     from(bucket: "${bucket}")
       |> range(start: 0) 
@@ -221,12 +218,10 @@ app.get("/api/getHeatmapRange", async (req, res) => {
   try {
     let oldest, newest;
 
-    // Ältester
     for await (const { values, tableMeta } of queryApi.iterateRows(fluxQuery)) {
       oldest = tableMeta.toObject(values)._time;
     }
 
-    // Neuster
     for await (const { values, tableMeta } of queryApi.iterateRows(fluxQueryNewest)) {
       newest = tableMeta.toObject(values)._time;
     }
@@ -238,11 +233,12 @@ app.get("/api/getHeatmapRange", async (req, res) => {
   }
 });
 
-// Heatmaps im Zeitraum abfragen (POST)
+// Heatmaps im Zeitraum (POST)
 app.post("/api/postHeatmapsRange", async (req, res) => {
+  const { queryApi, bucket } = req.app.locals;
   const { start, stop } = req.body;
 
-  if (!start || !stop) {
+  if (start == null || stop == null) {
     return res.status(400).json({ error: "Bitte start und stop im Body als Timestamps angeben" });
   }
 
@@ -262,16 +258,12 @@ app.post("/api/postHeatmapsRange", async (req, res) => {
 
       const buffer = Buffer.from(obj._value, "base64");
       const arr = Array.from(new Uint8Array(buffer));
-
       const grid = [];
       for (let i = 0; i < 10; i++) {
         grid.push(arr.slice(i * 10, (i + 1) * 10));
       }
 
-      result.push({
-        time: obj._time,
-        grid
-      });
+      result.push({ time: obj._time, grid });
     }
 
     res.json({ data: result });
@@ -281,7 +273,10 @@ app.post("/api/postHeatmapsRange", async (req, res) => {
   }
 });
 
+// Live-Heatmap (letzte 2s)
 app.get("/api/getLiveHeatmap", async (req, res) => {
+  const { queryApi, bucket } = req.app.locals;
+
   const now = new Date();
   const twoSecAgo = new Date(now.getTime() - 2 * 1000);
 
@@ -326,11 +321,12 @@ app.get("/api/getLiveHeatmap", async (req, res) => {
   }
 });
 
-// Durchschnitts-Heatmap im Zeitraum abfragen (POST)
+// Durchschnitts-Heatmap (POST)
 app.post("/api/postHeatmapAvg", async (req, res) => {
+  const { queryApi, bucket } = req.app.locals;
   const { start, stop } = req.body;
 
-  if (!start || !stop) {
+  if (start == null || stop == null) {
     return res.status(400).json({ error: "Bitte start und stop im Body als Timestamps angeben" });
   }
 
@@ -343,11 +339,8 @@ app.post("/api/postHeatmapAvg", async (req, res) => {
   `;
 
   try {
-    // Array-Summe vorbereiten
     const size = 10;
-    const sumGrid = Array.from({ length: size }, () =>
-      Array(size).fill(0)
-    );
+    const sumGrid = Array.from({ length: size }, () => Array(size).fill(0));
     let count = 0;
 
     for await (const { values, tableMeta } of queryApi.iterateRows(fluxQuery)) {
@@ -355,7 +348,6 @@ app.post("/api/postHeatmapAvg", async (req, res) => {
       const buffer = Buffer.from(obj._value, "base64");
       const arr = Array.from(new Uint8Array(buffer));
 
-      // 10x10 Grid erzeugen
       for (let i = 0; i < size; i++) {
         for (let j = 0; j < size; j++) {
           sumGrid[i][j] += arr[i * size + j];
@@ -368,7 +360,6 @@ app.post("/api/postHeatmapAvg", async (req, res) => {
       return res.json({ data: null, message: "Keine Heatmaps im angegebenen Zeitraum gefunden" });
     }
 
-    // Durchschnitt berechnen
     const avgGrid = sumGrid.map(row => row.map(val => Math.round(val / count)));
 
     res.json({
@@ -385,46 +376,48 @@ app.post("/api/postHeatmapAvg", async (req, res) => {
   }
 });
 
+// Status
 app.get('/api/status', async (req, res) => {
-    const results = {
-        nodeRed: false,
-        influx: false,
-        nodeRedDetails: null
-    };
+  const results = {
+    nodeRed: false,
+    influx: false,
+    nodeRedDetails: null
+  };
 
-    // Node-RED basic check
-    try {
-        const nr = await fetch('http://nodered:1880', { method: 'GET' });
-        results.nodeRed = nr.ok;
+  // Node-RED basic check
+  try {
+    const nr = await fetch('http://nodered:1880', { method: 'GET' });
+    results.nodeRed = nr.ok;
 
-        // Node-RED detaillierte Infos abrufen
-        if (nr.ok) {
-            try {
-                const detailsRes = await fetch('http://nodered:1880/api/nodered-status', { method: 'GET' });
-                if (detailsRes.ok) {
-                    results.nodeRedDetails = await detailsRes.json();
-                }
-            } catch (err) {
-                results.nodeRedDetails = { error: 'Could not fetch Node-RED details' };
-            }
+    if (nr.ok) {
+      try {
+        const detailsRes = await fetch('http://nodered:1880/api/nodered-status', { method: 'GET' });
+        if (detailsRes.ok) {
+          results.nodeRedDetails = await detailsRes.json();
         }
-    } catch {
-        results.nodeRed = false;
+      } catch (err) {
+        results.nodeRedDetails = { error: 'Could not fetch Node-RED details' };
+      }
     }
+  } catch {
+    results.nodeRed = false;
+  }
 
-    // Influx check
-    try {
-        const influxCheck = await fetch('http://influxdb:8086', { method: 'GET' });
-        results.influx = influxCheck.ok;
-    } catch {
-        results.influx = false;
-    }
+  // Influx check
+  try {
+    const influxCheck = await fetch('http://influxdb:8086', { method: 'GET' });
+    results.influx = influxCheck.ok;
+  } catch {
+    results.influx = false;
+  }
 
-    res.json(results);
+  res.json(results);
 });
 
-// API Heatmap dekosierungs test
+// Alle Heatmaps der letzten Stunde
 app.get("/api/getAllHeatmaps", async (req, res) => {
+  const { queryApi, bucket } = req.app.locals;
+
   const fluxQuery = `
     from(bucket: "${bucket}")
       |> range(start: -1h)
@@ -440,20 +433,15 @@ app.get("/api/getAllHeatmaps", async (req, res) => {
     for await (const { values, tableMeta } of queryApi.iterateRows(fluxQuery)) {
       const obj = tableMeta.toObject(values);
 
-      // Base64 → Uint8Array → JS Array
       const buffer = Buffer.from(obj._value, "base64");
       const arr = Array.from(new Uint8Array(buffer));
 
-      // Array in 10x10 Matrix umwandeln
       const grid = [];
       for (let i = 0; i < 10; i++) {
         grid.push(arr.slice(i * 10, (i + 1) * 10));
       }
 
-      result.push({
-        time: obj._time,
-        grid: grid
-      });
+      result.push({ time: obj._time, grid });
     }
 
     res.json({ data: result });
@@ -463,11 +451,12 @@ app.get("/api/getAllHeatmaps", async (req, res) => {
   }
 });
 
-// API: Peaks im Zeitraum abfragen (POST)
+// Peaks im Zeitraum (POST)
 app.post("/api/postPeaksRange", async (req, res) => {
+  const { queryApi, bucket } = req.app.locals;
   const { start, stop } = req.body;
 
-  if (!start || !stop) {
+  if (start == null || stop == null) {
     return res.status(400).json({ error: "Bitte start und stop im Body als Timestamps angeben" });
   }
 
@@ -499,8 +488,10 @@ app.post("/api/postPeaksRange", async (req, res) => {
   }
 });
 
-// Letzte Peaks (Default, ohne Range) -> optional
+// Letzte Peaks (ohne Range)
 app.get("/api/getPeaks", async (req, res) => {
+  const { queryApi, bucket } = req.app.locals;
+
   const fluxQuery = `
     from(bucket: "${bucket}")
       |> range(start: -1h)
@@ -515,9 +506,7 @@ app.get("/api/getPeaks", async (req, res) => {
     for await (const { values, tableMeta } of queryApi.iterateRows(fluxQuery)) {
       const obj = tableMeta.toObject(values);
 
-      if (!grouped[obj._time]) {
-        grouped[obj._time] = { time: obj._time };
-      }
+      if (!grouped[obj._time]) grouped[obj._time] = { time: obj._time };
       grouped[obj._time][obj._field] = obj._value;
     }
 
@@ -529,10 +518,12 @@ app.get("/api/getPeaks", async (req, res) => {
   }
 });
 
-// Live-Peaks abrufen
+// Live-Peaks (letzte 2s)
 app.get("/api/getLivePeaks", async (req, res) => {
+  const { queryApi, bucket } = req.app.locals;
+
   const now = new Date();
-  const twoSecAgo = new Date(now.getTime() - 2000); // letzte 2 Sekunden
+  const twoSecAgo = new Date(now.getTime() - 2000);
 
   const fluxQuery = `
     from(bucket: "${bucket}")
@@ -542,6 +533,7 @@ app.get("/api/getLivePeaks", async (req, res) => {
     |> sort(columns: ["_time"], desc: true)
     |> limit(n: 1)
   `;
+
   const grouped = {};
 
   try {
@@ -558,22 +550,4 @@ app.get("/api/getLivePeaks", async (req, res) => {
   }
 });
 
-// API Start
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`API listening on port ${PORT}`);
-});
-
-const shutdown = async () => {
-  console.log('🛑 Shutting down API service...');
-
-  try {
-    await writeApi.close();
-    console.log('✅ Influx write API closed.');
-  } catch (e) {
-    console.warn('⚠️ Error closing write API:', e.message);
-  }
-
-  process.exit(0);
-};
-
-process.on('SIGTERM', shutdown);
+module.exports = app;

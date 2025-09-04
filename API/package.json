@@ -4,7 +4,8 @@
   "description": "Dies ist das zentrale Code-Repository für unser Software-Engineering-Projekt **audiTim**.",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "jest",
+    "test:watch": "jest --watch"
   },
   "repository": {
     "type": "git",
@@ -23,5 +24,10 @@
     "dotenv": "^17.2.0",
     "express": "^5.1.0",
     "node-fetch": "^2.7.0"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "supertest": "^6.3.4",
+    "jest-environment-node": "^29.7.0"
   }
 }
