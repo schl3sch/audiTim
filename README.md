@@ -3,8 +3,27 @@
 Dies ist das zentrale Code-Repository für unser Software-Engineering-Projekt **audiTim**.
 
 📝 **👉 Projektdokumentation:**  
-Alle Details zur Idee, Architektur, Technik und Ergebnissen befinden sich im zugehörigen Doku-Repository:  
-📎 [https://github.com/JD-GG/audiTim-Documentation.git](https://github.com/JD-GG/audiTim-Documentation.git)
+Alle Details zur Idee, Architektur, Technik und Ergebnissen befinden sich in der hier beiligenden Dokumentation:  
+📎 ./Documentation/ProjektSe/dokumentation.pdf
+
+## 🛠️ Projekt bauen
+
+1. `.env` konfigurieren (siehe `template.env`)
+2. Netzwerk erstellen:
+    ```bash
+    docker network create sensor-net
+    ```
+3. Container bauen und starten:
+    ```bash
+    docker compose up --build -d
+    ```
+4. In [NodeRed](http://localhost:1880) die InfluxNode konfigurieren
+5. [Frontend](http://localhost:8081) öffnen
+
+Ports:
+- [Frontend](http://localhost:8081)
+- [NodeRed](http://localhost:1880)
+- [InfluxDB](http://localhost:8086)
 
 ## 📐 Programmierkonventionen
 
@@ -33,27 +52,19 @@ Bitte achtet auf folgende grundlegende Regeln im Projekt:
 ### Code-Richtlinien
 
 - **C++ (ESP32):**
-  - Kein delay() nach WiFi init (Stört WiFi)
   - Kein Serial.print in finalem Sketch (Braucht zu lange)
   - Kein \#define -> nur const (Einheitlich)
   - Kein while(!init){} (Nicht benötigt)
   - Funktion probeMax4466 muss in den Dateien identisch sein
   - Externe Bibliotheken müssen mit Version angegeben sein
 
-## 🔀 Git-Workflow (Feature-Branch-Modell)
-
-Wir arbeiten mit einem **Feature-Branch-Modell**, um saubere und nachvollziehbare Entwicklung zu gewährleisten.
-
-### Branches
-
-- `main`: stabile, getestete Versionen
-- `feature/<kurzer-namer>´: jeweiliger Feature-Branch
-
 ## Testing
 docker-compose -d -build --prod um tests in docker laufen zu lassen!
+
 ### E2E-Testing 
 npx playwright install to install Browsers locally
 npx playwright test to run tests
 npx playwright test --ui for ui 
 npx playwright test --headed for open Browser on testing
 npx playwright codegen http://localhost:8081 for testgenerator im Durchlauf
+

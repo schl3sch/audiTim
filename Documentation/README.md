@@ -1,6 +1,4 @@
 # 📄 Projektdokumentation – SE-Projekt DHBW
-# AudiTim
-Dieses Repository enthält die Projektdokumentation für unser Software-Engineering-Projekt im Rahmen des Studiums an der DHBW.
 
 ## 📁 Verzeichnisstruktur
 
