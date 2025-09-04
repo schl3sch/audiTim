@@ -1,5 +1,4 @@
 # 🎧 audiTim – SE-Projekt Code-Repository
-
 Dies ist das zentrale Code-Repository für unser Software-Engineering-Projekt **audiTim**.
 
 📝 **👉 Projektdokumentation:**  
@@ -7,7 +6,6 @@ Alle Details zur Idee, Architektur, Technik und Ergebnissen befinden sich in der
 📎 ./Documentation/ProjektSe/dokumentation.pdf
 
 ## 🛠️ Projekt bauen
-
 1. `.env` konfigurieren (siehe `template.env`)
 2. Netzwerk erstellen:
     ```bash
@@ -26,18 +24,15 @@ Ports:
 - [InfluxDB](http://localhost:8086)
 
 ## 📐 Programmierkonventionen
-
 Bitte achtet auf folgende grundlegende Regeln im Projekt:
 
 ### Allgemein
-
 -  Klare Projektstruktur: Trennung von `frontend`, `backend`, `firmware`, `tools` etc.
 -  Sinnvolle Dateinamen, keine Leerzeichen oder Sonderzeichen
 -  Kein Code ohne Nutzen: Altlasten & toten Code entfernen
 -  sprechende englische Variablen-/Funktionsnamen
 
 ### Code-Stil
-
 - **C++ (ESP32):**
   - Einrückung mit 2 Leerzeichen
   - CamelCase für Variablen und Funktionen
@@ -50,7 +45,6 @@ Bitte achtet auf folgende grundlegende Regeln im Projekt:
   - Klar benannte Funktionen & Kommentare bei komplexer Logik
 
 ### Code-Richtlinien
-
 - **C++ (ESP32):**
   - Kein Serial.print in finalem Sketch (Braucht zu lange)
   - Kein \#define -> nur const (Einheitlich)
