@@ -124,6 +124,42 @@ Der Rationale Aspekt einer traditionellen ist sicherlich in vieler Hinsicht nüt
 Eine nahtlosen Integration in das Node.js-Backend ist mit der offiziellen InfluxDB-Bibliothek kein Problem.
 InfluxDB wurde uns initial von den "Verteilten Systeme"-Dozenten ausdrücklich empfohlen, da wir viele Zeitwerte speichern und analysieren wollen.
 
+\subsubsection*{Berechnung des Speicherplatzbedarfs für InfluxDB}
+
+Zur Abschätzung des benötigten Speicherplatzes in InfluxDB betrachten wir die anfallenden Sensordaten pro Stunde.  
+
+\paragraph{Rohdaten}  
+Pro Sekunde werden \textbf{10 Messungen} von \textbf{4 Sensoren} erfasst, wobei jeder Wert als \texttt{double} (64\,Bit = 8\,Byte) gespeichert wird.  
+Damit ergibt sich:  
+
+\[
+10 \times 4 \times 8 \,\text{Byte} \times 60 \times 60 
+= 1{,}152{,}000 \,\text{Byte} \approx 1.1 \,\text{MB/h}
+\]
+
+\paragraph{Base64-kodierte Daten}  
+Wird der Algorithmus auf die Sensordaten angewendet, erzeugt er daraus ein 10x10-Array mit Werten im Bereich von 0 bis 255. Dieses Array wird anschließend kodiert. Durch die Base64-Kodierung entsteht dabei ein Overhead von etwa 36\%. Für die Datenmenge ergibt sich pro Sekunde:  
+
+\[
+800 \,\text{Bit} = 100 \,\text{Byte} \quad \Rightarrow \quad 
+\text{mit Overhead} \approx 136 \,\text{Byte}
+\]
+
+Somit pro Stunde:  
+
+\[
+136 \,\text{Byte} \times 60 \times 60 
+= 489{,}600 \,\text{Byte} \approx 470 \,\text{KB/h}
+\]
+
+\paragraph{Fazit}  
+Für die Speicherung in InfluxDB müssen daher pro Stunde etwa  
+\[
+1.1\,\text{MB (Rohdaten)} + 0.47\,\text{MB (Base64)} \approx 1.6\,\text{MB/h}
+\]  
+eingeplant werden.
+
+
 Das Backend ist ebenfalls in einem eigenen Docker-Container gekapselt. 
 Die Kommunikation mit dem Frontend erfolgt über definierte HTTP-Endpunkte im Container-Netzwerk. 
 Diese Trennung verbessert die Wartbarkeit und erlaubt eine flexible Skalierung beider Komponenten unabhängig voneinander.
