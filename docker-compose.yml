@@ -63,6 +63,11 @@ services:
       - sensor-net
     volumes:
       - ./Documentation/ProjektSe/dokumentation.pdf:/usr/share/nginx/html/assets/dokumentation.pdf:ro
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   alert-watcher:
     build:
@@ -88,6 +93,20 @@ services:
     restart: unless-stopped
     networks:
       - sensor-net
+    
+  e2e-tests:
+    build:
+      context: ./Frontend
+      dockerfile: Dockerfile.playwright
+    container_name: e2e-tests
+    depends_on:
+      frontend:
+        condition: service_healthy
+    environment:
+      - TEST_ENV=docker
+    networks:
+      - sensor-net
+    restart: "no"
 
 volumes:
   influxdb_data:

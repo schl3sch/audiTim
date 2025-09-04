@@ -48,3 +48,7 @@ Wir arbeiten mit einem **Feature-Branch-Modell**, um saubere und nachvollziehbar
 
 - `main`: stabile, getestete Versionen
 - `feature/<kurzer-namer>´: jeweiliger Feature-Branch
+
+## Testing
+docker-compose -d -build --prod um tests in docker laufen zu lassen!
+### E2E-Testing 
