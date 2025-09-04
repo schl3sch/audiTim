@@ -52,3 +52,8 @@ Wir arbeiten mit einem **Feature-Branch-Modell**, um saubere und nachvollziehbar
 ## Testing
 docker-compose -d -build --prod um tests in docker laufen zu lassen!
 ### E2E-Testing 
+npx playwright install to install Browsers locally
+npx playwright test to run tests
+npx playwright test --ui for ui 
+npx playwright test --headed for open Browser on testing
+npx playwright codegen http://localhost:8081 for testgenerator im Durchlauf
