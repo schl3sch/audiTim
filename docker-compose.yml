@@ -3,6 +3,8 @@ services:
     build:
       context: ./API
     container_name: backend
+    depends_on:
+      - postgresql
     ports:
       - "3000:3000"
     env_file:
@@ -15,6 +17,18 @@ services:
     networks:
       - sensor-net
     image: api:v1
+
+  postgresql:
+    image: postgres:14
+    container_name: postgresql
+    ports:
+      - ${POSTGRES_PORT}:5432
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: auditim
+      POSTGRES_PASSWORD: ${POSTGRES_ADMIN_PASS}
+    volumes:
+      - postgresql:/var/lib/postgresql/data
 
   influxdb:
     image: influxdb:2.7
@@ -54,6 +68,8 @@ services:
     build:
       context: ./Frontend
     image: frontend:v1
+    depends_on:
+      - postgresql
     container_name: frontendcontainer
     ports:
       - "8081:8081"
@@ -112,6 +128,7 @@ volumes:
   influxdb_data:
   nodered_data:
   alert_state:
+  postgresql:
 
 networks:
   sensor-net:
