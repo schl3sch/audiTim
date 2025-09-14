@@ -66,9 +66,18 @@ export class Peekmap implements AfterViewInit, OnInit {
     this.sensor.getLivePeaks().subscribe({
       next: (res) => {
         if (res.data) {
-          this.frames = [res.data];
+          const frame = res.data;
+          if (frame.time) {
+            const utcDate = new Date(frame.time);
+            const deDate = new Date(
+              utcDate.toLocaleString('de-DE', { timeZone: 'Europe/Berlin' })
+            );
+            frame.time = deDate.toISOString();
+          }
+
+          this.frames = [frame];
           this.currentFrameIndex = 0;
-          this.updatePlot(res.data);
+          this.updatePlot(frame);
         }
       },
       error: (err) => console.error('Fehler beim Laden der Live-Peaks:', err)

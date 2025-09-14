@@ -219,10 +219,18 @@ export class Heatmap implements AfterViewInit, OnInit {
   private loadLiveData(): void {
     this.sensor.getLiveHeatmap().subscribe({
       next: (res) => {
-        this.frame = res.data;
+        const frame = res.data;
+
+        if (frame.time) {
+          const utcDate = new Date(frame.time);
+          const deDate = new Date(utcDate.toLocaleString('de-DE', { timeZone: 'Europe/Berlin' }));
+          frame.time = deDate.toISOString();
+        }
+
+        this.frame = frame;
         this.updatePlot(this.frame.grid, true);
       },
-      error: (err) => console.error('Fehler beim Laden der Heatmap-Frames:', err)
+      error: (err) => console.error('Fehler beim Laden der Live-Heatmap:', err)
     });
   }
 
