@@ -4,7 +4,7 @@ const jwt = require('jsonwebtoken');
 
 const router = express.Router();
 
-const JWT_SECRET = process.env.JWT_SECRET || 'change_me';
+const JWT_SECRET = process.env.JWT_SECRET;
 const SALT_ROUNDS = parseInt(process.env.SALT_ROUNDS || '10', 10);
 
 // POST /api/register
