@@ -1,0 +1,30 @@
+<div class="container py-5" style="margin-left:230px; max-width:520px;">
+  <h2 class="mb-4">Registrieren</h2>
+
+  <form [formGroup]="form" (ngSubmit)="onSubmit()">
+    <div class="mb-3">
+      <label class="form-label">Benutzername</label>
+      <input class="form-control" formControlName="username" />
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label">E-Mail</label>
+      <input class="form-control" formControlName="email" />
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label">Passwort</label>
+      <input type="password" class="form-control" formControlName="password" />
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label">Passwort bestätigen</label>
+      <input type="password" class="form-control" formControlName="confirmPassword" />
+    </div>
+
+    <div *ngIf="error" class="alert alert-danger">{{ error }}</div>
+
+    <button class="btn btn-primary me-2" type="submit">Registrieren</button>
+    <a routerLink="/login" class="btn btn-link">Zur Anmeldung</a>
+  </form>
+</div>

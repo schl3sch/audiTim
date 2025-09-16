@@ -5,6 +5,7 @@ const express = require('express');
 const cors = require('cors');
 const fetch = require('node-fetch');
 const { InfluxDB } = require('@influxdata/influxdb-client');
+const { Pool } = require('pg');
 
 const app = express();
 app.use(express.json());
@@ -22,7 +23,26 @@ app.locals.bucket = bucket;
 app.locals.queryApi = influx.getQueryApi(org);
 app.locals.writeApi = influx.getWriteApi(org, bucket, 'ns');
 
-//Routes
+// Postgres (pg) Pool
+const pgPool = new Pool({
+  host: process.env.POSTGRES_HOST || 'postgresql',
+  port: process.env.POSTGRES_PORT ? Number(process.env.POSTGRES_PORT) : 5432,
+  user: process.env.POSTGRES_USER || 'auditim',
+  password: process.env.POSTGRES_PASSWORD || '',
+  database: process.env.POSTGRES_DB || 'postgres',
+});
+app.locals.pgPool = pgPool;
+
+pgPool.query('SELECT 1').then(() => {
+  console.log('✅ Connected to Postgres');
+}).catch((err) => {
+  console.warn('⚠️ Could not connect to Postgres on startup:', err.message);
+});
+
+// ====== Routes & existing code below (unchanged except we mount auth router) ======
+
+// (The rest of your existing code is kept exactly — heatmap, sensorRange, etc.)
+// I will append the existing routes (unchanged) here so the file remains complete:
 
 // Ältester & neuester Timestamp pro Sensor
 app.get('/api/sensorRange', async (req, res) => {
@@ -550,4 +570,8 @@ app.get("/api/getLivePeaks", async (req, res) => {
   }
 });
 
+// Mount auth router (neue Datei)
+app.use('/api', require('./auth'));
+
+// Export app (server.js startet den Server)
 module.exports = app;

@@ -14,6 +14,12 @@ services:
       - INFLUX_TOKEN=${INFLUX_TOKEN}
       - INFLUX_ORG=${INFLUX_ORG}
       - INFLUX_BUCKET=${INFLUX_BUCKET}
+      - POSTGRES_HOST=postgresql
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB=postgres
+      - POSTGRES_USER=auditim
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - JWT_SECRET=${JWT_SECRET}
     networks:
       - sensor-net
     image: api:v1
@@ -27,6 +33,8 @@ services:
       POSTGRES_DB: postgres
       POSTGRES_USER: auditim
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    networks:
+      - sensor-net
     healthcheck:
       test: ["CMD-SHELL", "pg_isready"]
       interval: 10s
@@ -34,6 +42,7 @@ services:
       retries: 5
     volumes:
       - postgresql:/var/lib/postgresql/data
+      - ./API/db-init:/docker-entrypoint-initdb.d:ro
 
   influxdb:
     image: influxdb:2.7
@@ -54,8 +63,8 @@ services:
       - DOCKER_INFLUXDB_INIT_MODE=setup
       - DOCKER_INFLUXDB_INIT_USERNAME=${INFLUXDB_INIT_USERNAME}
       - DOCKER_INFLUXDB_INIT_PASSWORD=${INFLUXDB_INIT_PASSWORD}
-      - DOCKER_INFLUXDB_INIT_ORG=${INFLUXDB_INIT_ORG}
-      - DOCKER_INFLUXDB_INIT_BUCKET=${INFLUXDB_INIT_BUCKET}
+      - DOCKER_INFLUXDB_INIT_ORG=${DOCKER_INFLUXDB_INIT_ORG}
+      - DOCKER_INFLUXDB_INIT_BUCKET=${DOCKER_INFLUXDB_INIT_BUCKET}
       - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=${INFLUXDB_INIT_ADMIN_TOKEN}
       - TZ=Europe/Berlin
     networks:
@@ -144,6 +153,3 @@ volumes:
 networks:
   sensor-net:
     external: true
-
-
-

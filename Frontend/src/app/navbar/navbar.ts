@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink, RouterLinkActive } from '@angular/router';
+import { RouterLink, RouterLinkActive, Router } from '@angular/router';
 
 @Component({
   selector: 'app-navbar',
@@ -13,24 +13,47 @@ export class Navbar {
   sidebarCollapsed = false;
   darkMode = false; // aktueller Zustand
 
-toggleTheme(event: any) {
-  this.darkMode = event.target.checked;
-  const theme = this.darkMode ? 'dark' : 'light';
+  constructor(private router: Router) {}
 
-  // Bootstrap Theme
-  document.documentElement.setAttribute('data-bs-theme', theme);
+  toggleTheme(event: any) {
+    this.darkMode = event.target.checked;
+    const theme = this.darkMode ? 'dark' : 'light';
 
-  // globaler class toggle für Body
-  document.body.classList.remove('light', 'dark');
-  document.body.classList.add(theme);
+    // Bootstrap Theme
+    document.documentElement.setAttribute('data-bs-theme', theme);
 
-  localStorage.setItem('theme', theme);
-}
+    // globaler class toggle für Body
+    document.body.classList.remove('light', 'dark');
+    document.body.classList.add(theme);
 
-ngOnInit() {
-  const savedTheme = localStorage.getItem('theme') || 'light';
-  this.darkMode = savedTheme === 'dark';
-  document.documentElement.setAttribute('data-bs-theme', savedTheme);
-  document.body.classList.add(savedTheme);
-}
+    localStorage.setItem('theme', theme);
+  }
+
+  ngOnInit() {
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    this.darkMode = savedTheme === 'dark';
+    document.documentElement.setAttribute('data-bs-theme', savedTheme);
+    document.body.classList.add(savedTheme);
+  }
+
+  isLoggedIn(): boolean {
+    return !!localStorage.getItem('token');
+  }
+
+  getUsername(): string | null {
+    const u = localStorage.getItem('user');
+    if (!u) return null;
+    try {
+      return JSON.parse(u).username;
+    } catch {
+      return null;
+    }
+  }
+
+  logout() {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    // navigate back to homepage
+    this.router.navigate(['/homepage']);
+  }
 }

@@ -4,6 +4,7 @@
   "description": "Dies ist das zentrale Code-Repository für unser Software-Engineering-Projekt **audiTim**.",
   "main": "index.js",
   "scripts": {
+    "start": "node server.js",
     "test": "jest",
     "test:watch": "jest --watch"
   },
@@ -20,14 +21,17 @@
   "homepage": "https://github.com/StmMtn/audiTim-BackEnd#readme",
   "dependencies": {
     "@influxdata/influxdb-client": "^1.35.0",
+    "bcryptjs": "^3.0.2",
     "cors": "^2.8.5",
     "dotenv": "^17.2.0",
     "express": "^5.1.0",
-    "node-fetch": "^2.7.0"
+    "jsonwebtoken": "^9.0.0",
+    "node-fetch": "^2.7.0",
+    "pg": "^8.11.0"
   },
   "devDependencies": {
     "jest": "^29.7.0",
-    "supertest": "^6.3.4",
-    "jest-environment-node": "^29.7.0"
+    "jest-environment-node": "^29.7.0",
+    "supertest": "^6.3.4"
   }
 }
