@@ -39,11 +39,6 @@ pgPool.query('SELECT 1').then(() => {
   console.warn('⚠️ Could not connect to Postgres on startup:', err.message);
 });
 
-// ====== Routes & existing code below (unchanged except we mount auth router) ======
-
-// (The rest of your existing code is kept exactly — heatmap, sensorRange, etc.)
-// I will append the existing routes (unchanged) here so the file remains complete:
-
 // Ältester & neuester Timestamp pro Sensor
 app.get('/api/sensorRange', async (req, res) => {
   const { queryApi, bucket } = req.app.locals;
