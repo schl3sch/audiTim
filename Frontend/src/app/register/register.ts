@@ -34,6 +34,26 @@ export class Register {
       this.error = 'Passwörter stimmen nicht überein';
       return;
     }
+    if (password.length < 8) {
+      this.error = 'Das Passwort muss mindestens 8 Zeichen lang sein';
+      return;
+    }
+    if (!/[A-Z]/.test(password)) {
+      this.error = 'Das Passwort muss mindestens einen Großbuchstaben enthalten';
+      return;
+    }
+    if (!/[a-z]/.test(password)) {
+      this.error = 'Das Passwort muss mindestens einen Kleinbuchstaben enthalten';
+      return;
+    }
+    if (!/[0-9]/.test(password)) {
+      this.error = 'Das Passwort muss mindestens eine Zahl enthalten';
+      return;
+    }
+    if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
+      this.error = 'Das Passwort muss mindestens ein Sonderzeichen enthalten';
+      return;
+    }
     this.error = '';
     this.auth.register(username ?? '', email ?? '', password ?? '').subscribe({
       next: (res: any) => {
